@@ -14,6 +14,7 @@ import activityRoutes from './routes/activity.routes';
 import progressRoutes from './routes/progress.routes';
 import resourceRoutes from './routes/resource.routes';
 import messageRoutes from './routes/message.routes';
+import fileRoutes from './routes/file.routes';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -23,6 +24,7 @@ import { logger } from './utils/logger';
 // Services
 import { SocketService } from './services/socket.service';
 import { ServiceFactory } from './services';
+import fileService from './services/file.service';
 
 // Types Socket.io
 import {
@@ -173,11 +175,19 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/files', fileRoutes);
 
 // Gestion des erreurs
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+
+// Initialiser le service de fichiers
+fileService.initialize().then(() => {
+  logger.info('📁 File service initialized');
+}).catch((error) => {
+  logger.error('Error initializing file service:', error);
+});
 
 httpServer.listen(PORT, () => {
   logger.info(`🚀 Server running on port ${PORT}`);

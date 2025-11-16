@@ -3144,10 +3144,49 @@ Propriétaire - Tous droits réservés
     - Payload size limit (10MB)
     - Memory monitoring
     - Stats collector
-- 🚧 **Phase 3.5**: Gestion de Fichiers (prochaine étape)
+- ✅ **Phase 3.5**: Gestion de Fichiers - **COMPLÉTÉ** 📁
+  - **FileService Complet**: Service de gestion centralisée de fichiers (500+ lignes)
+    - Upload sécurisé d'avatars, ressources, et fichiers d'activités
+    - Traitement d'images avec Sharp (redimensionnement, compression, conversion)
+    - Génération de miniatures automatique
+    - Nommage sécurisé et unique (crypto randomBytes)
+    - Organisation par répertoires (avatars/, resources/, activities/, thumbnails/)
+  - **Middleware Multer Avancé**: Validation stricte et sécurité renforcée
+    - Validation double extension + MIME type
+    - Blocage caractères dangereux et extensions suspectes
+    - Vérification cohérence extension/MIME
+    - Limites configurables (10MB/fichier, 10 fichiers max)
+    - Stockage temporaire sécurisé
+  - **Endpoints API (11 routes)**: Gestion complète CRUD
+    - POST /api/files/avatar - Upload avatar avec traitement image
+    - POST /api/files/resource - Upload ressource pédagogique
+    - POST /api/files/activity/:id - Upload fichier activité
+    - POST /api/files/multiple - Upload batch (max 10 fichiers)
+    - GET /api/files/download/:filename - Téléchargement sécurisé
+    - GET /api/files/info/:filename - Métadonnées de fichier
+    - DELETE /api/files/avatar/:filename - Suppression avatar
+    - DELETE /api/files/resource/:filename - Suppression ressource
+    - GET /api/files/storage/stats - Statistiques stockage (admin)
+    - POST /api/files/cleanup - Nettoyage fichiers temporaires (admin)
+  - **Sécurité & Validation**:
+    - Types MIME autorisés: images (JPEG, PNG, GIF, WebP), vidéos (MP4, WebM), documents (PDF, DOCX), audio (MP3, WAV)
+    - Rate limiting spécifique uploads (20/h)
+    - RBAC pour création/suppression ressources
+    - Vérification ownership pour suppression
+    - Sanitization noms de fichiers
+  - **Optimisations Images**:
+    - Avatars: redimensionnement 300x300, format JPEG, qualité 85%
+    - Miniatures: 150x150, format JPEG, qualité 70%
+    - Compression intelligente selon type
+  - **Tests**: 15 tests d'intégration complets
+    - Upload single/multiple fichiers
+    - Téléchargement et métadonnées
+    - Suppression et permissions
+    - Gestion erreurs (fichier manquant, type invalide, etc.)
+  - **Documentation Swagger**: 11 endpoints documentés avec exemples multipart/form-data
 - 🚧 **Phase 3.6**: Pipeline CI/CD
 - 🚧 **Phase 3.9**: Activités Interactives Spécifiques
 
 **Dernière mise à jour**: 16 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
-**Statut**: Phases 3.1-3.4, 3.7 & 3.8 complétées - Sécurité + Performance Production-Ready !
+**Statut**: Phases 3.1-3.5, 3.7 & 3.8 complétées - Gestion Fichiers + Sécurité + Performance Production-Ready !
