@@ -1298,6 +1298,196 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 4. **Onboarding**: Nouveaux développeurs comprennent l'API rapidement
 5. **Clients**: Génération automatique de clients SDK
 
+### Endpoints API Documentés (26 endpoints)
+
+Tous les endpoints REST de l'application sont entièrement documentés avec Swagger/OpenAPI.
+
+#### Authentication (4 endpoints)
+
+**POST `/api/auth/register`**
+- Créer un nouveau compte utilisateur
+- Body: `{ email, password, name, role }`
+- Response: `{ user, token }`
+- Rate limited: 5 requêtes/15 min
+
+**POST `/api/auth/login`**
+- Authentification d'un utilisateur
+- Body: `{ email, password }`
+- Response: `{ user, token }`
+- Rate limited: 5 requêtes/15 min
+
+**POST `/api/auth/logout`**
+- Déconnexion (invalide le token côté client)
+- Auth required: ✅
+- Response: `{ success, message }`
+
+**GET `/api/auth/me`**
+- Obtenir le profil de l'utilisateur connecté
+- Auth required: ✅
+- Response: `{ id, email, name, role, createdAt }`
+
+#### Profiles (4 endpoints)
+
+**GET `/api/profiles/:id`**
+- Obtenir un profil enfant par ID
+- Auth required: ✅
+- Response: ChildProfile complet
+- Errors: 404 si profil introuvable
+
+**PUT `/api/profiles/:id`**
+- Mettre à jour un profil enfant
+- Auth required: ✅
+- Body: `{ dateOfBirth?, avatarUrl?, developmentLevel?, iepGoals? }`
+- Response: ChildProfile mis à jour
+
+**PATCH `/api/profiles/:id/preferences`**
+- Mettre à jour les préférences sensorielles
+- Auth required: ✅
+- Body: `{ sensoryPreferences?, soundEnabled?, animationsEnabled?, dyslexiaMode?, highContrastMode?, fontSize? }`
+- Response: ChildProfile avec préférences mises à jour
+
+**GET `/api/profiles/children/all`**
+- Obtenir tous les profils enfants
+- Auth required: ✅
+- Response: Array de ChildProfile
+- Permissions: PARENT, EDUCATOR, THERAPIST, ADMIN
+
+#### Activities (6 endpoints)
+
+**GET `/api/activities`**
+- Obtenir toutes les activités avec filtres
+- Auth required: ✅
+- Query params: `category?, difficulty?, minAge?, maxAge?`
+- Response: Array d'Activity
+- Filtres disponibles: SOCIAL_SKILLS, COMMUNICATION, ACADEMIC, AUTONOMY, EMOTIONAL_REGULATION
+
+**GET `/api/activities/:id`**
+- Obtenir une activité par ID
+- Auth required: ✅
+- Response: Activity complet avec instructions et targetSkills
+- Errors: 404 si activité introuvable
+
+**GET `/api/activities/category/:category`**
+- Obtenir les activités par catégorie
+- Auth required: ✅
+- Params: category (SOCIAL_SKILLS | COMMUNICATION | ACADEMIC | AUTONOMY | EMOTIONAL_REGULATION)
+- Response: Array d'Activity de la catégorie
+
+**POST `/api/activities/session/start`**
+- Démarrer une session d'activité
+- Auth required: ✅
+- Body: `{ childId, activityId }`
+- Response: `{ sessionId, startedAt }`
+- Creates: Nouveau ActivitySession dans la base
+
+**POST `/api/activities/session/:sessionId/complete`**
+- Terminer une session d'activité
+- Auth required: ✅
+- Body: `{ successRate (0-100), responses?, notes? }`
+- Response: `{ tokensEarned, rewardsUnlocked }`
+- Side effects: Met à jour Progress automatiquement
+
+**PATCH `/api/activities/session/:sessionId`**
+- Mettre à jour une session en cours
+- Auth required: ✅
+- Body: `{ responses?, notes? }`
+- Response: Session mise à jour
+- Utilité: Sauvegarde progressive pendant l'activité
+
+#### Progress (4 endpoints)
+
+**GET `/api/progress/:childId`**
+- Obtenir les statistiques de progression
+- Auth required: ✅
+- Response: Progress complet `{ totalActivitiesCompleted, tokensEarned, currentStreak, longestStreak, lastActivityDate, rewardsUnlocked }`
+
+**PUT `/api/progress/:childId`**
+- Mettre à jour le progrès (admin uniquement)
+- Auth required: ✅ + ADMIN role
+- Body: `{ totalActivitiesCompleted?, tokensEarned?, currentStreak? }`
+- Response: Progress mis à jour
+- Errors: 403 si non autorisé
+
+**GET `/api/progress/:childId/rewards`**
+- Obtenir les récompenses (débloquées et disponibles)
+- Auth required: ✅
+- Response: `{ unlocked: string[], available: string[] }`
+
+**POST `/api/progress/:childId/rewards/:rewardId/unlock`**
+- Débloquer une récompense
+- Auth required: ✅
+- Response: `{ rewardId, tokensSpent }`
+- Errors: 400 si tokens insuffisants ou déjà débloquée
+
+#### Resources (4 endpoints)
+
+**GET `/api/resources`**
+- Obtenir toutes les ressources pédagogiques
+- Auth required: ✅
+- Query params: `page=1, limit=20, type?, category?`
+- Response: `{ data: Resource[], pagination: { page, limit, total, pages } }`
+- Pagination: 20 résultats par défaut
+
+**GET `/api/resources/type/:type`**
+- Obtenir les ressources par type
+- Auth required: ✅
+- Params: type (video | pictogram | social_story | guide | tutorial)
+- Response: Array de Resource du type spécifié
+
+**GET `/api/resources/search`**
+- Rechercher des ressources
+- Auth required: ✅
+- Query params: `q (required), type?, category?`
+- Response: `{ data: Resource[], count: number }`
+- Recherche: titre, description, tags
+
+**GET `/api/resources/:id`**
+- Obtenir une ressource par ID
+- Auth required: ✅
+- Response: Resource complet
+- Errors: 404 si ressource introuvable
+
+#### Messages (4 endpoints)
+
+**GET `/api/messages/user/:userId`**
+- Obtenir les messages d'un utilisateur
+- Auth required: ✅
+- Query params: `unreadOnly=false`
+- Response: `{ sent: Message[], received: Message[], unreadCount: number }`
+
+**POST `/api/messages`**
+- Envoyer un message
+- Auth required: ✅
+- Body: `{ recipientId, subject, content, attachments? }`
+- Response: Message créé
+- Side effects: Notification temps réel via Socket.io
+- Errors: 404 si destinataire introuvable
+
+**PATCH `/api/messages/:messageId/read`**
+- Marquer un message comme lu
+- Auth required: ✅
+- Response: Message mis à jour
+- Side effects: Notification de lecture via Socket.io
+- Errors: 403 si non destinataire
+
+**DELETE `/api/messages/:messageId`**
+- Supprimer un message
+- Auth required: ✅
+- Response: `{ success, message }`
+- Permissions: Expéditeur ou destinataire uniquement
+- Errors: 403 si non autorisé
+
+### Statistiques de Documentation
+
+- **Total endpoints documentés**: 26
+- **Endpoints protégés (JWT)**: 22 (85%)
+- **Endpoints publics**: 4 (register, login, logout, health)
+- **Catégories**: 6 (Auth, Profiles, Activities, Progress, Resources, Messages)
+- **Schémas de données**: 7 (User, ChildProfile, Activity, Progress, Message, Resource, Error)
+- **Méthodes HTTP utilisées**: GET (11), POST (9), PUT (2), PATCH (3), DELETE (1)
+
+Tous ces endpoints sont testables interactivement via Swagger UI à `http://localhost:5000/api-docs`.
+
 ## Communication Temps Réel avec Socket.io
 
 ### Vue d'ensemble
