@@ -663,12 +663,18 @@ npm test
 
 **Résultat**: 51 tests unitaires, 100% des méthodes publiques couvertes
 
-#### 3.3 - Documentation API (Priorité Moyenne)
-- [ ] Intégration Swagger/OpenAPI pour documentation API
-- [ ] Documentation interactive des endpoints
-- [ ] Schémas de validation Zod documentés
-- [ ] Exemples de requêtes/réponses
-- [ ] Guide d'authentification JWT
+#### 3.3 - Documentation API (Priorité Moyenne) ✅ COMPLÉTÉ
+- [x] Intégration Swagger/OpenAPI pour documentation API
+- [x] Configuration Swagger avec swagger-jsdoc et swagger-ui-express
+- [x] Documentation interactive des endpoints via Swagger UI
+- [x] Schémas de données complets (7 modèles)
+- [x] Exemples de requêtes/réponses
+- [x] Guide d'authentification JWT Bearer
+- [x] Tags et catégorisation des endpoints
+- [x] Endpoints de santé documentés
+- [x] Export JSON OpenAPI spec (/api-docs.json)
+
+**Résultat**: Documentation Swagger complète accessible à http://localhost:5000/api-docs
 
 #### 3.4 - Fonctionnalités Temps Réel (Priorité Haute) ✅ COMPLÉTÉ
 - [x] Implémentation complète Socket.io dans server.ts
@@ -927,6 +933,370 @@ export class AppError extends Error {
 throw new AppError('Utilisateur introuvable', 404);
 throw new AppError('Pas assez de jetons', 400);
 ```
+
+## Documentation API avec Swagger/OpenAPI
+
+### Vue d'ensemble
+
+SuperKids Learning utilise **Swagger UI** pour fournir une documentation API interactive et complète. Cette documentation permet aux développeurs de:
+- **Explorer** tous les endpoints disponibles
+- **Tester** les appels API directement depuis le navigateur
+- **Comprendre** les schémas de données et les réponses
+- **S'authentifier** avec JWT pour tester les endpoints protégés
+
+### Accès à la Documentation
+
+#### Interface Swagger UI
+```
+📚 http://localhost:5000/api-docs
+```
+Interface interactive avec Try-it-out pour chaque endpoint.
+
+#### Spécification OpenAPI JSON
+```
+📄 http://localhost:5000/api-docs.json
+```
+Fichier JSON OpenAPI 3.0 brut, utilisable avec des outils comme Postman, Insomnia, etc.
+
+### Configuration Swagger
+
+#### Fichier de Configuration (`backend/src/config/swagger.ts`)
+
+```typescript
+import swaggerJsdoc from 'swagger-jsdoc';
+
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'SuperKids Learning API',
+    version: '1.1.0',
+    description: 'API REST pour l\'application d\'apprentissage',
+    contact: {
+      name: 'SuperKids Learning Support',
+      email: 'support@superkids-learning.com'
+    }
+  },
+  servers: [
+    {
+      url: 'http://localhost:5000',
+      description: 'Serveur de développement'
+    },
+    {
+      url: 'https://api.superkids-learning.com',
+      description: 'Serveur de production'
+    }
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      }
+    }
+  }
+};
+```
+
+### Schémas de Données Documentés
+
+#### 7 Modèles Principaux
+
+1. **User** - Utilisateurs de l'application
+2. **ChildProfile** - Profils enfants avec préférences
+3. **Activity** - Activités d'apprentissage
+4. **Progress** - Suivi des progrès et récompenses
+5. **Message** - Messages entre utilisateurs
+6. **Resource** - Ressources pédagogiques
+7. **Error** - Format des erreurs API
+
+#### Exemple de Schéma: ChildProfile
+
+```yaml
+ChildProfile:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    dateOfBirth:
+      type: string
+      format: date
+    age:
+      type: integer
+      minimum: 3
+      maximum: 12
+    sensoryPreferences:
+      type: array
+      items:
+        type: string
+        enum: [LOW_STIMULATION, MEDIUM_STIMULATION, HIGH_CONTRAST, MONOCHROME]
+    iepGoals:
+      type: array
+      items:
+        type: string
+    soundEnabled:
+      type: boolean
+    dyslexiaMode:
+      type: boolean
+    highContrastMode:
+      type: boolean
+```
+
+### Catégorisation des Endpoints (Tags)
+
+Les endpoints sont organisés par tags:
+
+- **Authentication** - Authentification et gestion utilisateurs
+- **Profiles** - Gestion profils enfants
+- **Activities** - Activités d'apprentissage
+- **Progress** - Suivi progrès et récompenses
+- **Resources** - Bibliothèque de ressources
+- **Messages** - Messagerie
+- **Health** - Endpoints de santé
+
+### Authentification JWT dans Swagger
+
+#### 1. Obtenir un Token
+
+Utilisez l'endpoint `POST /api/auth/login` dans Swagger UI:
+
+```json
+{
+  "email": "parent@example.com",
+  "password": "votre_mot_de_passe"
+}
+```
+
+Réponse:
+```json
+{
+  "user": {
+    "id": "user_123",
+    "email": "parent@example.com",
+    "name": "Parent Test",
+    "role": "PARENT"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 2. Autoriser dans Swagger UI
+
+1. Cliquez sur le bouton **"Authorize"** 🔒 en haut à droite
+2. Entrez: `Bearer <votre_token>`
+3. Cliquez sur "Authorize"
+4. Tous les endpoints protégés sont maintenant accessibles
+
+### Exemples d'Utilisation
+
+#### Obtenir Tous les Profils Enfants
+
+```http
+GET /api/profiles/children/all
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+Réponse:
+```json
+[
+  {
+    "id": "profile_123",
+    "userId": "user_456",
+    "age": 7,
+    "sensoryPreferences": ["LOW_STIMULATION"],
+    "soundEnabled": false,
+    "dyslexiaMode": true
+  }
+]
+```
+
+#### Démarrer une Session d'Activité
+
+```http
+POST /api/activities/session/start
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "childId": "profile_123",
+  "activityId": "activity_789"
+}
+```
+
+Réponse:
+```json
+{
+  "id": "session_abc",
+  "childId": "profile_123",
+  "activityId": "activity_789",
+  "startTime": "2025-11-16T10:00:00.000Z",
+  "completed": false
+}
+```
+
+#### Compléter une Session
+
+```http
+POST /api/activities/session/session_abc/complete
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "completed": true,
+  "successRate": 0.85,
+  "attemptsCount": 3,
+  "supportLevel": "minimal",
+  "emotionalState": "happy"
+}
+```
+
+### Annotations JSDoc dans le Code
+
+Les endpoints sont documentés directement dans le code avec JSDoc:
+
+```typescript
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     tags:
+ *       - Health
+ *     summary: Vérifier l'état de l'API
+ *     description: Retourne l'état de santé de l'API
+ *     responses:
+ *       200:
+ *         description: API opérationnelle
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: OK
+ */
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: '...' });
+});
+```
+
+### Réponses d'Erreur Standardisées
+
+Toutes les erreurs suivent le même format:
+
+```typescript
+{
+  "message": "Description de l'erreur",
+  "statusCode": 400,
+  "code": "ERROR_CODE"
+}
+```
+
+Codes d'erreur communs:
+- **401 Unauthorized**: Token manquant ou invalide
+- **403 Forbidden**: Accès refusé
+- **404 Not Found**: Ressource introuvable
+- **400 Bad Request**: Données invalides
+- **500 Internal Server Error**: Erreur serveur
+
+### Composants Réutilisables
+
+#### Réponses Prédéfinies
+
+```yaml
+components:
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Token invalide ou expiré
+            statusCode: 401
+            code: UNAUTHORIZED
+
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+```
+
+### Intégration avec Autres Outils
+
+#### Postman
+1. Téléchargez le JSON: `http://localhost:5000/api-docs.json`
+2. Importez dans Postman: File → Import → Paste Raw Text
+3. Collection prête à l'emploi avec tous les endpoints !
+
+#### Insomnia
+1. Téléchargez le JSON OpenAPI
+2. Importez dans Insomnia
+3. Toutes les routes sont automatiquement créées
+
+#### VS Code REST Client
+Créez un fichier `.http`:
+```http
+@baseUrl = http://localhost:5000
+@token = {{auth_token}}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Get Profile
+GET {{baseUrl}}/api/profiles/user_123
+Authorization: Bearer {{token}}
+```
+
+### Personnalisation Swagger UI
+
+Dans `server.ts`:
+
+```typescript
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'SuperKids Learning API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true, // Garder le token en mémoire
+    displayRequestDuration: true, // Afficher durée des requêtes
+    filter: true, // Activer la recherche
+    syntaxHighlight: {
+      theme: 'monokai' // Thème de coloration
+    }
+  }
+}));
+```
+
+### Bonnes Pratiques
+
+✅ **Documentation à jour** - Swagger est généré depuis le code source
+✅ **Types cohérents** - Schémas alignés avec Prisma/TypeScript
+✅ **Exemples concrets** - Chaque endpoint a des exemples
+✅ **Erreurs documentées** - Tous les codes d'erreur expliqués
+✅ **Authentification claire** - Process JWT bien décrit
+✅ **Versioning** - Version de l'API dans la config
+
+### Avantages pour le Développement
+
+1. **Frontend**: Connaissance exacte des contrats API
+2. **Backend**: Documentation auto-générée, toujours à jour
+3. **Tests**: Utilisation directe dans Swagger UI
+4. **Onboarding**: Nouveaux développeurs comprennent l'API rapidement
+5. **Clients**: Génération automatique de clients SDK
 
 ## Communication Temps Réel avec Socket.io
 
