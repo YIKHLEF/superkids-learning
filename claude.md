@@ -714,13 +714,52 @@ npm test
 - [ ] Logging centralisé (ELK Stack)
 - [ ] Backup automatisé de la base de données
 
-#### 3.7 - Sécurité Renforcée (Priorité Haute)
-- [ ] Rate limiting granulaire par endpoint
-- [ ] Validation renforcée des inputs (Zod schemas)
-- [ ] Audit logging des actions sensibles
-- [ ] RBAC (Role-Based Access Control) complet
-- [ ] Scan de vulnérabilités (OWASP ZAP)
-- [ ] Headers de sécurité HTTP avancés
+#### 3.7 - Sécurité Renforcée (Priorité Haute) ✅ COMPLÉTÉ
+- [x] Rate limiting granulaire par endpoint - **8 limiters spécialisés**
+  - [x] authLimiter (5 req/15min)
+  - [x] writeOperationsLimiter (30 req/10min)
+  - [x] uploadLimiter (20 req/1h)
+  - [x] searchLimiter (50 req/5min)
+  - [x] messagingLimiter (40 req/10min)
+  - [x] adminLimiter (200 req/15min)
+  - [x] deleteLimiter (10 req/1h)
+  - [x] analyticsLimiter (60 req/10min)
+- [x] Validation renforcée des inputs (Zod schemas) - **15+ schémas**
+  - [x] Schémas d'authentification (register, login, changePassword)
+  - [x] Schémas de profils (create, update, preferences)
+  - [x] Schémas d'activités (filters, session, completion)
+  - [x] Schémas de progrès et récompenses
+  - [x] Schémas de ressources et messages
+  - [x] Middleware de validation avec formatage d'erreurs
+  - [x] Sanitization des inputs (XSS protection)
+- [x] Audit logging des actions sensibles
+  - [x] AuditService avec 25+ types d'actions
+  - [x] Enregistrement automatique dans Winston logs
+  - [x] Middleware d'audit pour routes
+  - [x] Tracking des connexions, modifications, suppressions
+  - [x] Détection d'activités suspectes
+  - [x] Logs de rate limiting et accès non autorisés
+- [x] RBAC (Role-Based Access Control) complet
+  - [x] 5 rôles définis (CHILD, PARENT, EDUCATOR, THERAPIST, ADMIN)
+  - [x] 25+ permissions granulaires
+  - [x] Matrice de permissions par rôle
+  - [x] Middleware requirePermission
+  - [x] Middleware requireRole
+  - [x] Middleware requireOwnership
+  - [x] Contrôle d'accès aux profils enfants
+- [ ] Scan de vulnérabilités (OWASP ZAP) - **À faire**
+- [x] Headers de sécurité HTTP avancés
+  - [x] Configuration Helmet complète
+  - [x] Content Security Policy (CSP)
+  - [x] HSTS avec preload
+  - [x] XSS Protection
+  - [x] Clickjacking protection (frameguard)
+  - [x] CORS sécurisé avec whitelist
+  - [x] Protection SQL injection
+  - [x] Protection NoSQL injection
+  - [x] Permissions Policy
+
+**Résultat**: Sécurité renforcée à plusieurs niveaux (réseau, application, données)
 
 #### 3.8 - Performance et Optimisation (Priorité Moyenne)
 - [ ] Cache Redis pour ressources fréquentes
@@ -2081,6 +2120,412 @@ Format des logs:
 }
 ```
 
+## Sécurité Renforcée (Phase 3.7)
+
+### Vue d'ensemble
+
+SuperKids Learning implémente une architecture de sécurité multi-niveaux pour protéger les données sensibles des enfants et garantir la conformité avec les réglementations (RGPD, COPPA).
+
+### 1. Rate Limiting Granulaire
+
+#### Limiters Spécialisés par Type d'Endpoint
+
+Le système implémente 8 rate limiters différenciés selon le niveau de sensibilité:
+
+```typescript
+// backend/src/middleware/rateLimiter.ts
+
+// 1. Authentication (5 req/15min)
+authLimiter - Protège contre les attaques par force brute
+
+// 2. Write Operations (30 req/10min)
+writeOperationsLimiter - Limite les créations/modifications
+
+// 3. File Upload (20 req/1h)
+uploadLimiter - Contrôle l'upload de fichiers
+
+// 4. Search (50 req/5min)
+searchLimiter - Prévient l'abus des recherches
+
+// 5. Messaging (40 req/10min)
+messagingLimiter - Limite l'envoi de messages
+
+// 6. Admin Operations (200 req/15min)
+adminLimiter - Limite élevée pour les admins
+
+// 7. Delete Operations (10 req/1h)
+deleteLimiter - Stricte pour les suppressions
+
+// 8. Analytics (60 req/10min)
+analyticsLimiter - Contrôle les requêtes de stats
+```
+
+#### Configuration Avancée
+
+- **Key Generation**: Par userId pour utilisateurs authentifiés, par IP sinon
+- **Standard Headers**: Retourne X-RateLimit-* headers
+- **Skip Conditions**: Bypass pour super admins sur certains limiters
+
+### 2. Validation Renforcée avec Zod
+
+#### Schémas de Validation Stricts
+
+```typescript
+// backend/src/middleware/validation.schemas.ts
+
+// Validation de mot de passe fort
+passwordSchema
+  .min(8)
+  .regex(/[A-Z]/) // Majuscule
+  .regex(/[a-z]/) // Minuscule
+  .regex(/[0-9]/) // Chiffre
+  .regex(/[@$!%*?&#]/) // Caractère spécial
+
+// Validation âge (3-12 ans)
+dateOfBirthSchema.refine((date) => {
+  const age = calculateAge(date);
+  return age >= 3 && age <= 12;
+});
+
+// Validation UUID stricte
+uuidSchema = z.string().uuid('ID invalide');
+```
+
+#### 15+ Schémas Disponibles
+
+- **Auth**: registerSchema, loginSchema, changePasswordSchema
+- **Profiles**: createProfileSchema, updateProfileSchema, updatePreferencesSchema
+- **Activities**: activityFiltersSchema, startSessionSchema, completeSessionSchema
+- **Progress**: updateProgressSchema, unlockRewardSchema
+- **Resources**: resourceFiltersSchema, searchResourcesSchema, createResourceSchema
+- **Messages**: sendMessageSchema, messageFiltersSchema
+
+#### Middleware de Validation
+
+```typescript
+// Utilisation dans les routes
+router.post('/register', validate(registerSchema), authController.register);
+
+// Validation multi-sources
+router.post(
+  '/activity/:id',
+  validateAll({
+    params: idParamSchema,
+    body: startSessionSchema,
+    query: paginationSchema,
+  }),
+  activityController.start
+);
+```
+
+#### Sanitization Automatique
+
+- Échappement des caractères HTML/JS dangereux
+- Protection contre XSS
+- Nettoyage récursif des objets imbriqués
+
+### 3. Audit Logging des Actions Sensibles
+
+#### AuditService Complet
+
+```typescript
+// backend/src/services/audit.service.ts
+
+enum AuditAction {
+  // 25+ types d'actions trackées
+  USER_LOGIN,
+  USER_LOGOUT,
+  PASSWORD_CHANGE,
+  PROFILE_CREATE,
+  PROFILE_UPDATE,
+  PROFILE_DELETE,
+  ACTIVITY_START,
+  REWARD_UNLOCK,
+  MESSAGE_SEND,
+  UNAUTHORIZED_ACCESS,
+  SUSPICIOUS_ACTIVITY,
+  RATE_LIMIT_EXCEEDED,
+  // ...
+}
+
+enum AuditSeverity {
+  INFO,
+  WARNING,
+  ERROR,
+  CRITICAL
+}
+```
+
+#### Fonctionnalités d'Audit
+
+**Enregistrement Automatique**
+```typescript
+auditService.log({
+  action: AuditAction.USER_LOGIN,
+  userId: 'user_123',
+  severity: AuditSeverity.INFO,
+  ipAddress: '192.168.1.1',
+  userAgent: 'Mozilla/5.0...',
+  success: true,
+  metadata: { loginMethod: 'email' }
+});
+```
+
+**Méthodes Spécialisées**
+- `logSuccessfulLogin()` - Connexions réussies
+- `logFailedLogin()` - Tentatives échouées
+- `logPasswordChange()` - Changements de mot de passe
+- `logUnauthorizedAccess()` - Accès refusés
+- `logAdminAction()` - Actions administratives
+- `logSuspiciousActivity()` - Activités anormales
+- `logRateLimitExceeded()` - Dépassements de limites
+
+**Historique et Compliance**
+- Logs stockés dans Winston (fichiers)
+- Option de stockage DB (AuditLog table)
+- Nettoyage automatique après 90 jours (GDPR)
+- Récupération des logs par utilisateur
+- Détection d'activités suspectes
+
+### 4. RBAC (Role-Based Access Control)
+
+#### Hiérarchie des Rôles
+
+```typescript
+enum UserRole {
+  CHILD       // Accès limité aux activités
+  PARENT      // Gestion profils enfants
+  EDUCATOR    // Création activités + profils
+  THERAPIST   // Similaire à EDUCATOR
+  ADMIN       // Toutes permissions
+}
+```
+
+#### Matrice de Permissions (25+ permissions)
+
+```typescript
+enum Permission {
+  // Profils
+  CREATE_PROFILE,
+  READ_PROFILE,
+  UPDATE_PROFILE,
+  DELETE_PROFILE,
+  READ_ALL_PROFILES,
+
+  // Activités
+  START_ACTIVITY,
+  COMPLETE_ACTIVITY,
+  CREATE_ACTIVITY,
+  UPDATE_ACTIVITY,
+  DELETE_ACTIVITY,
+
+  // Progrès
+  READ_PROGRESS,
+  UPDATE_PROGRESS,
+  UNLOCK_REWARD,
+
+  // Messages
+  SEND_MESSAGE,
+  READ_MESSAGE,
+  DELETE_MESSAGE,
+
+  // Ressources
+  READ_RESOURCE,
+  CREATE_RESOURCE,
+  UPDATE_RESOURCE,
+  DELETE_RESOURCE,
+  DOWNLOAD_RESOURCE,
+
+  // Admin
+  ACCESS_ADMIN_PANEL,
+  VIEW_AUDIT_LOGS,
+  MANAGE_PERMISSIONS,
+  // ...
+}
+```
+
+#### Middlewares RBAC
+
+**Vérification de Permission**
+```typescript
+// Requiert une permission spécifique
+router.delete(
+  '/profile/:id',
+  requirePermission(Permission.DELETE_PROFILE),
+  profileController.delete
+);
+
+// Requiert plusieurs permissions (OU logique)
+router.post(
+  '/activity',
+  requirePermission([Permission.CREATE_ACTIVITY, Permission.UPDATE_ACTIVITY]),
+  activityController.create
+);
+
+// Requiert toutes les permissions (ET logique)
+router.post(
+  '/admin/action',
+  requirePermission([Permission.ACCESS_ADMIN_PANEL, Permission.MANAGE_PERMISSIONS], true),
+  adminController.action
+);
+```
+
+**Vérification de Rôle**
+```typescript
+// Autorise certains rôles uniquement
+router.get(
+  '/analytics',
+  requireRole([UserRole.PARENT, UserRole.EDUCATOR, UserRole.ADMIN]),
+  analyticsController.get
+);
+```
+
+**Vérification de Propriété**
+```typescript
+// Vérifie que l'utilisateur est propriétaire
+router.put(
+  '/profile/:id',
+  requireOwnership('id', 'userId'),
+  profileController.update
+);
+```
+
+**Accès Contrôlé aux Profils Enfants**
+```typescript
+// Parents/Éducateurs/Thérapeutes autorisés
+router.get(
+  '/child/:childId/progress',
+  requireChildAccess,
+  progressController.getByChild
+);
+```
+
+### 5. Headers de Sécurité HTTP Avancés
+
+#### Configuration Helmet Complète
+
+```typescript
+// backend/src/config/security.ts
+
+helmet({
+  // Content Security Policy
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", frontendUrl],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+
+  // HSTS - Force HTTPS
+  hsts: {
+    maxAge: 31536000, // 1 an
+    includeSubDomains: true,
+    preload: true,
+  },
+
+  // Anti-Clickjacking
+  frameguard: { action: 'deny' },
+
+  // XSS Protection
+  xssFilter: true,
+  noSniff: true,
+
+  // Referrer Policy
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+});
+```
+
+#### Headers Personnalisés Additionnels
+
+```typescript
+// Permissions Policy
+'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+
+// Cross-Origin Policies
+'Cross-Origin-Embedder-Policy': 'require-corp'
+'Cross-Origin-Opener-Policy': 'same-origin'
+'Cross-Origin-Resource-Policy': 'same-origin'
+
+// Cache Control pour endpoints sensibles
+'Cache-Control': 'no-store, no-cache, must-revalidate'
+```
+
+#### Protection Contre les Injections
+
+**SQL Injection Protection**
+```typescript
+// Détection de patterns SQL malveillants
+sqlInjectionPatterns = [
+  /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,
+  /(\b(SELECT|UNION|INSERT|UPDATE|DELETE|DROP)\b)/i
+];
+// Rejet automatique des requêtes suspectes
+```
+
+**NoSQL Injection Protection**
+```typescript
+// Blocage des opérateurs MongoDB
+if (key.startsWith('$')) {
+  throw new Error('Invalid query');
+}
+```
+
+**XSS Protection**
+```typescript
+// Nettoyage des scripts malveillants
+xssPatterns = [
+  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi  // onclick=, onerror=, etc.
+];
+```
+
+### 6. CORS Sécurisé
+
+#### Whitelist d'Origines
+
+```typescript
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24h
+};
+```
+
+### Résumé de la Sécurité
+
+| Couche | Protection | Statut |
+|--------|------------|--------|
+| Réseau | Rate Limiting (8 types) | ✅ |
+| Entrées | Validation Zod (15+ schémas) | ✅ |
+| Entrées | Sanitization XSS/SQL/NoSQL | ✅ |
+| Autorisation | RBAC (5 rôles, 25+ permissions) | ✅ |
+| Audit | Logging (25+ actions) | ✅ |
+| Transport | Headers HTTP sécurisés | ✅ |
+| Transport | CORS whitelist | ✅ |
+| Transport | HSTS + CSP | ✅ |
+
+**Niveau de Sécurité**: Production-Ready avec conformité RGPD/COPPA
+
 ## Contributeurs
 
 Ce projet a été développé selon les spécifications du document "Application_Apprentissage_Autisme_Specifications.docx" qui s'appuie sur:
@@ -2110,6 +2555,13 @@ Propriétaire - Tous droits réservés
   - 100% des méthodes publiques des services testées
   - Mocks Prisma pour isolation
   - Success + Error paths couverts
+- ✅ **Phase 3.3**: Documentation API Swagger/OpenAPI - **COMPLÉTÉ**
+  - Configuration Swagger complète avec swagger-jsdoc
+  - Documentation interactive accessible à /api-docs
+  - 7 schémas de données documentés
+  - 26 endpoints API documentés
+  - Authentification JWT dans Swagger UI
+  - Export JSON OpenAPI spec
 - ✅ **Phase 3.4**: Socket.io temps réel - **COMPLÉTÉ**
   - SocketService backend complet avec 15+ événements
   - Authentification JWT pour WebSocket
@@ -2119,9 +2571,34 @@ Propriétaire - Tous droits réservés
   - Gestion multi-connexions par utilisateur
   - Client Socket.io frontend avec types TypeScript
   - Endpoints de santé Socket.io (/health/socket)
-- 🚧 Documentation API Swagger (Phase 3.3 - prochaine étape)
-- 🚧 Pipeline CI/CD (Phase 3.6)
+- ✅ **Phase 3.7**: Sécurité Renforcée - **COMPLÉTÉ** 🔒
+  - **Rate Limiting Granulaire**: 8 limiters spécialisés par type d'endpoint
+    - authLimiter, writeOperationsLimiter, uploadLimiter, searchLimiter
+    - messagingLimiter, adminLimiter, deleteLimiter, analyticsLimiter
+  - **Validation Zod**: 15+ schémas de validation avec middleware
+    - Validation stricte des entrées (auth, profils, activités, etc.)
+    - Sanitization automatique XSS
+    - Formatage d'erreurs détaillé
+  - **Audit Logging**: Traçabilité complète des actions sensibles
+    - AuditService avec 25+ types d'actions
+    - Logging Winston + option DB
+    - Détection d'activités suspectes
+    - Conformité GDPR (nettoyage auto après 90j)
+  - **RBAC Complet**: Contrôle d'accès basé sur les rôles
+    - 5 rôles (CHILD, PARENT, EDUCATOR, THERAPIST, ADMIN)
+    - 25+ permissions granulaires
+    - Middlewares requirePermission, requireRole, requireOwnership
+    - Contrôle d'accès aux profils enfants
+  - **Headers Sécurité HTTP**: Configuration Helmet avancée
+    - CSP, HSTS, XSS Protection, Anti-Clickjacking
+    - CORS sécurisé avec whitelist
+    - Protection SQL/NoSQL injection
+    - Cross-Origin Policies
+- 🚧 **Phase 3.5**: Gestion de Fichiers (prochaine étape)
+- 🚧 **Phase 3.6**: Pipeline CI/CD
+- 🚧 **Phase 3.8**: Performance et Optimisation
+- 🚧 **Phase 3.9**: Activités Interactives Spécifiques
 
 **Dernière mise à jour**: 16 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
-**Statut**: Phase 3.1, 3.2 & 3.4 complétées - Socket.io opérationnel !
+**Statut**: Phases 3.1-3.4 & 3.7 complétées - Sécurité Production-Ready !
