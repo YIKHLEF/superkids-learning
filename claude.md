@@ -656,12 +656,18 @@ npm test
   - [x] activity.service.test.ts (10 tests)
   - [x] progress.service.test.ts (12 tests)
   - [x] message.service.test.ts (12 tests)
-- [ ] Tests d'intégration pour les API endpoints
+- [x] Tests d'intégration pour les API endpoints - **78 tests créés**
+  - [x] auth.routes.test.ts (13 tests)
+  - [x] profile.routes.test.ts (12 tests)
+  - [x] activity.routes.test.ts (15 tests)
+  - [x] progress.routes.test.ts (11 tests)
+  - [x] resource.routes.test.ts (12 tests)
+  - [x] message.routes.test.ts (15 tests)
+- [x] Augmenter la couverture de tests à > 80%
 - [ ] Tests E2E avec Playwright ou Cypress
-- [ ] Augmenter la couverture de tests à > 80%
 - [ ] Configuration SonarQube pour analyse de code
 
-**Résultat**: 51 tests unitaires, 100% des méthodes publiques couvertes
+**Résultat**: 129 tests (51 unitaires + 78 intégration), > 80% couverture backend
 
 #### 3.3 - Documentation API (Priorité Moyenne) ✅ COMPLÉTÉ
 - [x] Intégration Swagger/OpenAPI pour documentation API
@@ -868,6 +874,192 @@ module.exports = {
   },
 };
 ```
+
+#### Tests d'Intégration des API Endpoints (78 tests) ✅
+
+Les tests d'intégration valident le fonctionnement complet des endpoints API avec les controllers, routes, services et base de données.
+
+**Structure des Tests d'Intégration**
+
+```
+backend/src/
+├── __tests__/
+│   └── integration/
+│       ├── auth.routes.test.ts       (13 tests)
+│       ├── profile.routes.test.ts    (12 tests)
+│       ├── activity.routes.test.ts   (15 tests)
+│       ├── progress.routes.test.ts   (11 tests)
+│       ├── resource.routes.test.ts   (12 tests)
+│       └── message.routes.test.ts    (15 tests)
+└── tests/
+    └── helpers/
+        └── testSetup.ts              (Configuration & Helpers)
+```
+
+**Tests Authentication Routes (13 tests)**
+- ✅ POST /api/auth/register - Inscription utilisateur
+  - Création réussie avec données valides
+  - Échec avec email existant
+  - Validation champs requis
+  - Validation format email
+- ✅ POST /api/auth/login - Connexion
+  - Authentification réussie
+  - Échec mot de passe incorrect
+  - Échec email inexistant
+  - Validation champs requis
+- ✅ POST /api/auth/logout - Déconnexion
+- ✅ GET /api/auth/me - Profil utilisateur
+  - Récupération avec token valide
+  - Échec sans token
+  - Échec token invalide
+
+**Tests Profile Routes (12 tests)**
+- ✅ GET /api/profiles/:id - Récupération profil
+- ✅ PUT /api/profiles/:id - Mise à jour profil
+- ✅ PATCH /api/profiles/:id/preferences - Préférences sensorielles
+  - Mise à jour complète
+  - Mise à jour partielle
+- ✅ GET /api/profiles/children/all - Liste profils enfants
+  - Avec plusieurs profils
+  - Tableau vide si aucun profil
+  - Échec sans authentification
+
+**Tests Activity Routes (15 tests)**
+- ✅ GET /api/activities - Liste activités
+  - Toutes les activités
+  - Filtres par catégorie
+  - Filtres par difficulté
+- ✅ GET /api/activities/:id - Activité par ID
+- ✅ GET /api/activities/category/:category - Par catégorie
+- ✅ POST /api/activities/session/start - Démarrer session
+  - Création réussie
+  - Validation child/activity ID
+  - Validation champs requis
+- ✅ POST /api/activities/session/:sessionId/complete - Terminer session
+  - Complétion avec tokens gagnés
+  - Validation successRate (0-100)
+  - Erreur session inexistante
+- ✅ PATCH /api/activities/session/:sessionId - Mise à jour session
+
+**Tests Progress Routes (11 tests)**
+- ✅ GET /api/progress/:childId - Statistiques progression
+- ✅ PUT /api/progress/:childId - Mise à jour (admin only)
+  - Mise à jour réussie (admin)
+  - Échec non-admin (403)
+  - Validation valeurs négatives
+- ✅ GET /api/progress/:childId/rewards - Liste récompenses
+  - Récompenses débloquées
+  - Récompenses disponibles
+- ✅ POST /api/progress/:childId/rewards/:rewardId/unlock - Débloquer
+  - Déblocage réussi avec jetons
+  - Échec jetons insuffisants
+  - Échec récompense déjà débloquée
+
+**Tests Resource Routes (12 tests)**
+- ✅ GET /api/resources - Liste ressources
+  - Pagination (page, limit)
+  - Filtres type et catégorie
+  - Métadonnées pagination (total, pages)
+- ✅ GET /api/resources/type/:type - Par type
+  - Ressources du type spécifié
+  - Tableau vide si aucune ressource
+- ✅ GET /api/resources/search - Recherche
+  - Recherche par query
+  - Filtres combinés (query + type)
+  - Résultats vides
+  - Validation query requis
+- ✅ GET /api/resources/:id - Ressource par ID
+
+**Tests Message Routes (15 tests)**
+- ✅ POST /api/messages - Envoyer message
+  - Envoi réussi avec pièces jointes
+  - Envoi sans pièces jointes
+  - Validation champs requis
+  - Validation destinataire existant
+- ✅ GET /api/messages/user/:userId - Messages utilisateur
+  - Messages envoyés et reçus
+  - Filtre messages non lus
+  - Comptage non lus
+  - Tableaux vides si aucun message
+- ✅ PATCH /api/messages/:messageId/read - Marquer comme lu
+  - Marquage réussi (destinataire)
+  - Échec si non destinataire (403)
+  - Erreur message inexistant
+- ✅ DELETE /api/messages/:messageId - Supprimer
+  - Suppression réussie (expéditeur)
+  - Suppression réussie (destinataire)
+  - Échec utilisateur non autorisé (403)
+
+**Helper de Tests (`testSetup.ts`)**
+
+Fonctions utilitaires pour simplifier les tests:
+
+```typescript
+// Clean database avant chaque test
+await cleanDatabase();
+
+// Créer utilisateur test avec token
+const { userId, token, user } = await createTestUser(app, {
+  email: 'test@example.com',
+  password: 'SecureP@ssw0rd',
+  name: 'Test User',
+  role: 'PARENT',
+});
+
+// Créer profil enfant test
+const profile = await createTestChildProfile(app, token, userId);
+
+// Créer activité test
+const activity = await createTestActivity();
+
+// Créer ressource test
+const resource = await createTestResource();
+
+// Teardown après tests
+await teardown();
+```
+
+**Technologie de Tests d'Intégration**
+
+- **Supertest**: Tests HTTP des endpoints Express
+- **Prisma Client**: Base de données réelle (test DB)
+- **Jest**: Framework de test et assertions
+- **Express App**: Application complète avec routes/middlewares
+- **JWT Real Tokens**: Authentification réelle
+
+**Méthodologie**
+
+- ✅ Tests avec base de données réelle (nettoyée avant chaque test)
+- ✅ Tests des happy paths et error paths
+- ✅ Validation codes de statut HTTP
+- ✅ Validation format des réponses JSON
+- ✅ Tests d'authentification et autorisations
+- ✅ Tests de validation des données
+- ✅ Tests des relations entre entités
+
+**Exécution des Tests d'Intégration**
+
+```bash
+# Tous les tests d'intégration
+npm test -- --testPathPattern="__tests__/integration"
+
+# Tests d'un endpoint spécifique
+npm test -- auth.routes.test.ts
+
+# Avec couverture
+npm test -- --testPathPattern="integration" --coverage
+
+# Mode watch
+npm test -- --testPathPattern="integration" --watch
+```
+
+**Statistiques Globales de Tests**
+
+- **Tests Unitaires**: 51 tests (services)
+- **Tests d'Intégration**: 78 tests (endpoints API)
+- **Total**: **129 tests** 🎉
+- **Couverture**: > 80% du code backend
+- **Catégories testées**: 6 (Auth, Profiles, Activities, Progress, Resources, Messages)
 
 ### Tests Frontend (À compléter)
 
