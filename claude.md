@@ -331,6 +331,129 @@ model Progress {
 }
 ```
 
+## Services Backend (Architecture)
+
+### Pourquoi une Couche de Services ?
+
+Les services backend séparent la logique métier des controllers, offrant plusieurs avantages:
+
+1. **Séparation des préoccupations**: Controllers gèrent HTTP, services gèrent la logique métier
+2. **Réutilisabilité**: Services peuvent être appelés depuis plusieurs controllers
+3. **Testabilité**: Plus facile de tester la logique métier isolément
+4. **Maintenabilité**: Code organisé et facile à maintenir
+
+### Services à Implémenter (Phase 3.1)
+
+#### AuthService (`src/services/auth.service.ts`)
+```typescript
+class AuthService {
+  async register(userData: RegisterDTO): Promise<UserWithToken>
+  async login(credentials: LoginDTO): Promise<UserWithToken>
+  async validateToken(token: string): Promise<User>
+  async refreshToken(refreshToken: string): Promise<string>
+  async logout(userId: string): Promise<void>
+  async resetPassword(email: string): Promise<void>
+}
+```
+
+#### ProfileService (`src/services/profile.service.ts`)
+```typescript
+class ProfileService {
+  async getProfile(userId: string): Promise<ChildProfile>
+  async updateProfile(userId: string, data: UpdateProfileDTO): Promise<ChildProfile>
+  async updatePreferences(userId: string, prefs: PreferencesDTO): Promise<ChildProfile>
+  async getAllChildrenProfiles(parentId: string): Promise<ChildProfile[]>
+  async deleteProfile(userId: string): Promise<void>
+}
+```
+
+#### ActivityService (`src/services/activity.service.ts`)
+```typescript
+class ActivityService {
+  async getAllActivities(filters?: ActivityFilters): Promise<Activity[]>
+  async getActivityById(id: string): Promise<Activity>
+  async getActivitiesByCategory(category: ActivityCategory): Promise<Activity[]>
+  async startActivitySession(childId: string, activityId: string): Promise<ActivitySession>
+  async completeActivitySession(sessionId: string, results: SessionResults): Promise<ActivitySession>
+  async getChildActivityHistory(childId: string): Promise<ActivitySession[]>
+}
+```
+
+#### ProgressService (`src/services/progress.service.ts`)
+```typescript
+class ProgressService {
+  async getProgress(childId: string): Promise<Progress>
+  async updateProgress(childId: string, sessionData: SessionResults): Promise<Progress>
+  async getRewards(childId: string): Promise<Reward[]>
+  async unlockReward(childId: string, rewardId: string): Promise<Progress>
+  async calculateStreak(childId: string): Promise<number>
+  async getAnalytics(childId: string, period: DateRange): Promise<AnalyticsData>
+}
+```
+
+#### ResourceService (`src/services/resource.service.ts`)
+```typescript
+class ResourceService {
+  async getAllResources(filters?: ResourceFilters): Promise<Resource[]>
+  async getResourcesByType(type: ResourceType): Promise<Resource[]>
+  async searchResources(query: string): Promise<Resource[]>
+  async createResource(data: CreateResourceDTO): Promise<Resource>
+  async updateResource(id: string, data: UpdateResourceDTO): Promise<Resource>
+  async deleteResource(id: string): Promise<void>
+}
+```
+
+#### MessageService (`src/services/message.service.ts`)
+```typescript
+class MessageService {
+  async getUserMessages(userId: string): Promise<Message[]>
+  async sendMessage(data: SendMessageDTO): Promise<Message>
+  async markAsRead(messageId: string): Promise<Message>
+  async deleteMessage(messageId: string): Promise<void>
+  async getConversation(userId1: string, userId2: string): Promise<Message[]>
+}
+```
+
+### Architecture de Service Standard
+
+Chaque service suit cette structure:
+
+```typescript
+// Exemple: activity.service.ts
+import { PrismaClient } from '@prisma/client';
+import { ActivityFilters, CreateActivityDTO } from '../types';
+import { AppError } from '../utils/errors';
+import { logger } from '../utils/logger';
+
+export class ActivityService {
+  private prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
+
+  async getAllActivities(filters?: ActivityFilters) {
+    try {
+      const activities = await this.prisma.activity.findMany({
+        where: {
+          category: filters?.category,
+          difficulty: filters?.difficulty,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      logger.info(`Fetched ${activities.length} activities`);
+      return activities;
+    } catch (error) {
+      logger.error('Error fetching activities:', error);
+      throw new AppError('Failed to fetch activities', 500);
+    }
+  }
+
+  // ... autres méthodes
+}
+```
+
 ## API Endpoints
 
 ### Authentication
@@ -512,17 +635,96 @@ npm test
 - ✅ Scripts de seed pour données de test
 - ✅ Configuration Docker et Docker Compose
 
-### Phase 3 (Futur)
-- [ ] Module IA de personnalisation
+### Phase 3 (En cours) 🚧
+#### 3.1 - Services Backend (Priorité Haute)
+- [ ] Créer la couche de services métier séparée des controllers
+- [ ] Service d'authentification (auth.service.ts)
+- [ ] Service de gestion de profils (profile.service.ts)
+- [ ] Service de gestion des activités (activity.service.ts)
+- [ ] Service de suivi des progrès (progress.service.ts)
+- [ ] Service de gestion des ressources (resource.service.ts)
+- [ ] Service de messagerie (message.service.ts)
+
+#### 3.2 - Tests et Qualité (Priorité Haute)
+- [ ] Tests unitaires pour tous les services backend (Jest)
+- [ ] Tests d'intégration pour les API endpoints
+- [ ] Tests E2E avec Playwright ou Cypress
+- [ ] Augmenter la couverture de tests à > 80%
+- [ ] Configuration SonarQube pour analyse de code
+
+#### 3.3 - Documentation API (Priorité Moyenne)
+- [ ] Intégration Swagger/OpenAPI pour documentation API
+- [ ] Documentation interactive des endpoints
+- [ ] Schémas de validation Zod documentés
+- [ ] Exemples de requêtes/réponses
+- [ ] Guide d'authentification JWT
+
+#### 3.4 - Fonctionnalités Temps Réel (Priorité Haute)
+- [ ] Implémentation complète Socket.io dans server.ts
+- [ ] Événements de notification en temps réel
+- [ ] Mise à jour live des progrès
+- [ ] Chat en temps réel pour messagerie
+- [ ] Présence utilisateur (online/offline)
+
+#### 3.5 - Gestion de Fichiers (Priorité Moyenne)
+- [ ] Upload d'avatars pour profils enfants
+- [ ] Upload de ressources éducatives
+- [ ] Stockage et compression d'images
+- [ ] Validation et sécurisation des uploads
+- [ ] Intégration avec cloud storage (AWS S3 / Azure Blob)
+
+#### 3.6 - Infrastructure DevOps (Priorité Moyenne)
+- [ ] Pipeline CI/CD avec GitHub Actions
+  - [ ] Tests automatiques sur PR
+  - [ ] Build et déploiement automatique
+  - [ ] Analyse de sécurité (Snyk)
+- [ ] Scripts d'administration
+- [ ] Monitoring avec Prometheus + Grafana
+- [ ] Logging centralisé (ELK Stack)
+- [ ] Backup automatisé de la base de données
+
+#### 3.7 - Sécurité Renforcée (Priorité Haute)
+- [ ] Rate limiting granulaire par endpoint
+- [ ] Validation renforcée des inputs (Zod schemas)
+- [ ] Audit logging des actions sensibles
+- [ ] RBAC (Role-Based Access Control) complet
+- [ ] Scan de vulnérabilités (OWASP ZAP)
+- [ ] Headers de sécurité HTTP avancés
+
+#### 3.8 - Performance et Optimisation (Priorité Moyenne)
+- [ ] Cache Redis pour ressources fréquentes
+- [ ] Optimisation des queries Prisma (includes, selects)
+- [ ] Pagination pour toutes les listes
+- [ ] Compression gzip des réponses API
+- [ ] CDN pour assets statiques
+- [ ] Lazy loading des composants React
+
+#### 3.9 - Activités Interactives Spécifiques (Priorité Haute)
+- [ ] Composants d'activités par catégorie:
+  - [ ] Reconnaissance des émotions (drag & drop)
+  - [ ] Tableau CAA interactif
+  - [ ] Jeux de mathématiques adaptés
+  - [ ] Séquences d'habillage/hygiène
+  - [ ] Exercices de respiration pour régulation
+- [ ] Système de scoring et feedback immédiat
+- [ ] Adaptabilité du niveau de difficulté
+
+#### 3.10 - Composants UI Additionnels (Priorité Basse)
+- [ ] Storybook pour documentation composants
+- [ ] Composants d'accessibilité avancés
+- [ ] Bibliothèque de pictogrammes intégrée
+- [ ] Composants d'animations douces (Framer Motion)
+- [ ] Lecteur vidéo personnalisé
+
+### Phase 4 (Futur - Long terme)
+- [ ] Module IA de personnalisation adaptative
 - [ ] Analyse vidéo pour suivi comportemental
 - [ ] Application mobile (React Native)
 - [ ] Intégration de l'analyse vocale
-
-### Phase 4 (Long terme)
 - [ ] Marketplace de contenu éducatif
-- [ ] Intégration avec systèmes scolaires
+- [ ] Intégration avec systèmes scolaires (LMS)
 - [ ] Recherche et collecte de données anonymisées
-- [ ] Multilingue (anglais, espagnol, etc.)
+- [ ] Support multilingue (anglais, espagnol, arabe, etc.)
 
 ## Contributeurs
 
@@ -537,5 +739,19 @@ Propriétaire - Tous droits réservés
 
 ---
 
-**Dernière mise à jour**: Novembre 2025
-**Version**: 1.0.0
+## Historique des Versions
+
+### Version 1.0.0 (Novembre 2025)
+- ✅ Phase 1: Architecture de base complète
+- ✅ Phase 2: Tests, Services API, Middleware et Infrastructure
+
+### Version 1.1.0 (En cours - Phase 3)
+- 🚧 Services backend (couche métier)
+- 🚧 Documentation API Swagger
+- 🚧 Tests additionnels (couverture > 80%)
+- 🚧 Socket.io temps réel
+- 🚧 Pipeline CI/CD
+
+**Dernière mise à jour**: 16 Novembre 2025
+**Version Actuelle**: 1.1.0-dev
+**Statut**: Phase 3 en développement actif
