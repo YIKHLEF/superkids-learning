@@ -1,0 +1,191 @@
+// Schema Prisma pour SuperKids Learning
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CHILD
+  PARENT
+  EDUCATOR
+  THERAPIST
+  ADMIN
+}
+
+enum SensoryPreference {
+  LOW_STIMULATION
+  MEDIUM_STIMULATION
+  HIGH_CONTRAST
+  MONOCHROME
+}
+
+enum ActivityCategory {
+  SOCIAL_SKILLS
+  COMMUNICATION
+  ACADEMIC
+  AUTONOMY
+  EMOTIONAL_REGULATION
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String
+  name          String
+  role          UserRole
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  childProfile  ChildProfile?
+  sentMessages  Message[]    @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  @@map("users")
+}
+
+model ChildProfile {
+  id                    String              @id @default(uuid())
+  userId                String              @unique
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dateOfBirth           DateTime
+  age                   Int
+  avatarUrl             String?
+  sensoryPreferences    SensoryPreference[]
+  developmentLevel      String
+  iepGoals              String[]
+
+  // Préférences
+  soundEnabled          Boolean             @default(true)
+  animationsEnabled     Boolean             @default(true)
+  dyslexiaMode          Boolean             @default(false)
+  highContrastMode      Boolean             @default(false)
+  fontSize              String              @default("medium")
+
+  // Relations
+  parentIds             String[]
+  educatorIds           String[]
+
+  activitySessions      ActivitySession[]
+  progress              Progress?
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@map("child_profiles")
+}
+
+model Activity {
+  id                String            @id @default(uuid())
+  title             String
+  description       String
+  category          ActivityCategory
+  difficulty        DifficultyLevel
+  duration          Int               // en minutes
+  thumbnailUrl      String?
+  videoUrl          String?
+  instructions      String[]
+  targetSkills      String[]
+
+  activitySessions  ActivitySession[]
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("activities")
+}
+
+model ActivitySession {
+  id                String      @id @default(uuid())
+  childId           String
+  child             ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  activityId        String
+  activity          Activity    @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  startTime         DateTime    @default(now())
+  endTime           DateTime?
+  completed         Boolean     @default(false)
+  successRate       Float       @default(0)
+  attemptsCount     Int         @default(0)
+  supportLevel      String      @default("none") // none, minimal, moderate, full
+  emotionalState    String?     // happy, neutral, frustrated, anxious
+  notes             String?
+
+  @@map("activity_sessions")
+}
+
+model Progress {
+  id                        String       @id @default(uuid())
+  childId                   String       @unique
+  child                     ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  totalActivitiesCompleted  Int          @default(0)
+  tokensEarned              Int          @default(0)
+  skillsAcquired            Json         @default("{}")
+  currentStreak             Int          @default(0)
+  longestStreak             Int          @default(0)
+  lastActivityDate          DateTime?
+  rewardsUnlocked           String[]
+
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  @@map("progress")
+}
+
+model Reward {
+  id                String    @id @default(uuid())
+  name              String
+  description       String
+  iconUrl           String
+  tokensRequired    Int
+  type              String    // badge, avatar, theme, celebration
+
+  createdAt         DateTime  @default(now())
+
+  @@map("rewards")
+}
+
+model Resource {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  type          String    // video, pictogram, social_story, guide, tutorial
+  category      String
+  url           String
+  thumbnailUrl  String?
+  tags          String[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("resources")
+}
+
+model Message {
+  id            String    @id @default(uuid())
+  senderId      String
+  sender        User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId   String
+  recipient     User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  subject       String
+  content       String
+  read          Boolean   @default(false)
+  attachments   String[]
+
+  createdAt     DateTime  @default(now())
+
+  @@map("messages")
+}
