@@ -670,12 +670,20 @@ npm test
 - [ ] Exemples de requêtes/réponses
 - [ ] Guide d'authentification JWT
 
-#### 3.4 - Fonctionnalités Temps Réel (Priorité Haute)
-- [ ] Implémentation complète Socket.io dans server.ts
-- [ ] Événements de notification en temps réel
-- [ ] Mise à jour live des progrès
-- [ ] Chat en temps réel pour messagerie
-- [ ] Présence utilisateur (online/offline)
+#### 3.4 - Fonctionnalités Temps Réel (Priorité Haute) ✅ COMPLÉTÉ
+- [x] Implémentation complète Socket.io dans server.ts
+- [x] Service Socket.io dédié avec gestion événements
+- [x] Authentification Socket.io avec JWT
+- [x] Événements de notification en temps réel
+- [x] Mise à jour live des progrès
+- [x] Chat en temps réel pour messagerie
+- [x] Présence utilisateur (online/offline)
+- [x] Indicateurs de frappe (typing indicators)
+- [x] Gestion multi-connexions par utilisateur
+- [x] Client Socket.io frontend avec hooks React
+- [x] Types TypeScript pour tous les événements
+
+**Résultat**: SocketService complet, 15+ événements temps réel, client/serveur intégrés
 
 #### 3.5 - Gestion de Fichiers (Priorité Moyenne)
 - [ ] Upload d'avatars pour profils enfants
@@ -920,6 +928,407 @@ throw new AppError('Utilisateur introuvable', 404);
 throw new AppError('Pas assez de jetons', 400);
 ```
 
+## Communication Temps Réel avec Socket.io
+
+### Vue d'ensemble
+
+SuperKids Learning utilise Socket.io pour fournir des fonctionnalités temps réel essentielles:
+- **Messagerie instantanée** entre parents, éducateurs et thérapeutes
+- **Notifications en direct** pour les progrès et récompenses
+- **Présence utilisateur** (online/offline/away)
+- **Indicateurs de frappe** dans les conversations
+- **Mises à jour live** des activités et progrès
+
+### Architecture Socket.io
+
+```
+┌──────────────┐                  ┌──────────────┐
+│   Frontend   │  ◄──────────►    │   Backend    │
+│  (React)     │   WebSocket      │  (Node.js)   │
+│              │                  │              │
+│ SocketService│                  │SocketService │
+└──────────────┘                  └──────────────┘
+        │                                │
+        │ Events:                        │
+        │ - authenticate                 │ Events:
+        │ - send-message                 │ - new-message
+        │ - typing-start                 │ - user-online
+        │ - join-room                    │ - progress-update
+        └────────────────────────────────┘
+```
+
+### Implémentation Backend
+
+#### SocketService (`backend/src/services/socket.service.ts`)
+
+Service complet de gestion des événements Socket.io:
+
+```typescript
+export class SocketService {
+  private io: Server;
+  private prisma: PrismaClient;
+  private onlineUsers: Map<string, Set<string>>;
+  private typingUsers: Map<string, Set<string>>;
+
+  // Méthodes principales
+  - handleAuthentication()     // Authentification JWT
+  - handleMessaging()          // Événements de messagerie
+  - handlePresence()           // Gestion présence
+  - handleNotifications()      // Notifications temps réel
+  - setUserOnline/Offline()    // Gestion connexions multiples
+}
+```
+
+#### Types Socket.io (`backend/src/types/socket.types.ts`)
+
+Types TypeScript complets pour la sécurité:
+
+```typescript
+interface ClientToServerEvents {
+  authenticate: (token: string) => void;
+  'send-message': (data: SendMessageData) => void;
+  'typing-start': (data: TypingData) => void;
+  'join-room': (userId: string) => void;
+  // ... 10+ événements
+}
+
+interface ServerToClientEvents {
+  'new-message': (data: NewMessageData) => void;
+  'user-online': (userId: string) => void;
+  'progress-update': (data: ProgressUpdateData) => void;
+  'reward-unlocked': (data: RewardUnlockedData) => void;
+  // ... 15+ événements
+}
+```
+
+### Événements Temps Réel
+
+#### 1. Authentification
+
+```typescript
+// Client → Server
+socket.emit('authenticate', jwtToken);
+
+// Server → Client
+socket.on('authenticated', (userId) => {
+  console.log('Authenticated as:', userId);
+});
+```
+
+#### 2. Messagerie
+
+```typescript
+// Envoyer un message
+socketService.sendMessage({
+  recipientId: 'user_456',
+  subject: 'Question sur les progrès',
+  content: 'Comment va mon enfant ?',
+  attachments: []
+});
+
+// Recevoir un nouveau message
+socketService.on('new-message', (message) => {
+  // Afficher notification
+  showNotification(message);
+  // Mettre à jour UI
+  updateMessagesList(message);
+});
+
+// Indicateur de frappe
+socketService.startTyping(conversationId, userId);
+socketService.stopTyping(conversationId, userId);
+
+// Écouter indicateurs de frappe
+socketService.on('typing-indicator', ({ userName, isTyping }) => {
+  if (isTyping) {
+    showTypingIndicator(`${userName} est en train d'écrire...`);
+  }
+});
+```
+
+#### 3. Présence Utilisateur
+
+```typescript
+// Changer son statut
+socketService.setUserStatus('online'); // 'online' | 'offline' | 'away'
+
+// Écouter les changements de statut
+socketService.on('user-online', (userId) => {
+  updateUserPresence(userId, 'online');
+});
+
+socketService.on('user-offline', (userId) => {
+  updateUserPresence(userId, 'offline');
+});
+
+// Vérifier qui est en ligne
+GET /health/socket
+{
+  "status": "OK",
+  "onlineUsers": 12,
+  "users": ["user_1", "user_2", ...]
+}
+```
+
+#### 4. Notifications en Temps Réel
+
+```typescript
+// Recevoir une notification
+socketService.on('new-notification', (notification) => {
+  // Afficher toast/banner
+  toast.info(notification.title, notification.message);
+
+  // Jouer un son (si activé)
+  if (soundEnabled) playNotificationSound();
+
+  // Incrémenter compteur
+  incrementNotificationCount();
+});
+
+// Types de notifications
+type NotificationType =
+  | 'message'           // Nouveau message
+  | 'progress'          // Mise à jour progrès
+  | 'reward'            // Récompense débloquée
+  | 'activity'          // Activité complétée
+  | 'system';           // Notification système
+```
+
+#### 5. Mises à Jour de Progrès
+
+```typescript
+// Backend émet après complétion d'activité
+socketService.notifyProgressUpdate(childId, {
+  tokensEarned: 10,
+  totalActivitiesCompleted: 25,
+  currentStreak: 5
+});
+
+// Frontend écoute
+socketService.on('progress-update', (data) => {
+  // Mettre à jour Redux store
+  dispatch(updateProgress(data));
+
+  // Animation de célébration
+  if (data.tokensEarned > 0) {
+    showTokensAnimation(data.tokensEarned);
+  }
+});
+
+// Récompense débloquée
+socketService.on('reward-unlocked', (reward) => {
+  showRewardModal({
+    name: reward.rewardName,
+    type: reward.rewardType,
+    icon: reward.iconUrl
+  });
+  playConfettiAnimation();
+});
+```
+
+### Implémentation Frontend
+
+#### SocketService (`frontend/src/services/socketService.ts`)
+
+Client Socket.io singleton pour React:
+
+```typescript
+import { socketService } from '../services/socketService';
+
+// Dans App.tsx ou layout principal
+useEffect(() => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    socketService.connect(token);
+  }
+
+  return () => {
+    socketService.disconnect();
+  };
+}, []);
+
+// Dans un composant de messagerie
+const MessageComponent = () => {
+  useEffect(() => {
+    const handleNewMessage = (message) => {
+      setMessages(prev => [...prev, message]);
+      playNotificationSound();
+    };
+
+    socketService.on('new-message', handleNewMessage);
+
+    return () => {
+      socketService.off('new-message', handleNewMessage);
+    };
+  }, []);
+
+  const sendMessage = () => {
+    socketService.sendMessage({
+      recipientId: selectedUser.id,
+      subject: 'Hello',
+      content: messageText
+    });
+  };
+
+  return (/* JSX */);
+};
+```
+
+### Gestion Multi-Connexions
+
+Le SocketService gère automatiquement les connexions multiples:
+
+```typescript
+// Un utilisateur peut avoir plusieurs connexions
+// (navigateur, mobile, tablette)
+private onlineUsers: Map<string, Set<string>>;
+// userId → Set<socketId>
+
+// L'utilisateur est "offline" seulement quand toutes
+// ses connexions sont fermées
+private setUserOffline(userId, socketId) {
+  userSockets.delete(socketId);
+  if (userSockets.size === 0) {
+    // Vraiment offline
+    this.io.emit('user-offline', userId);
+  }
+}
+```
+
+### Sécurité
+
+#### Authentification JWT
+
+```typescript
+// Le socket doit s'authentifier avant d'envoyer des événements
+socket.on('authenticate', async (token) => {
+  const decoded = jwt.verify(token, jwtSecret);
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId }
+  });
+
+  if (user) {
+    socket.data.userId = user.id;
+    socket.data.authenticated = true;
+    socket.join(user.id);
+    socket.emit('authenticated', user.id);
+  } else {
+    socket.emit('auth-error', 'Invalid token');
+  }
+});
+
+// Validation sur chaque événement
+socket.on('send-message', async (data) => {
+  if (!socket.data.authenticated) {
+    socket.emit('error', {
+      message: 'Not authenticated',
+      code: 'AUTH_REQUIRED'
+    });
+    return;
+  }
+  // ... traitement
+});
+```
+
+#### Validation des Données
+
+```typescript
+// Validation des données entrantes
+socket.on('send-message', (data: SendMessageData) => {
+  // Vérifier que l'expéditeur est bien l'utilisateur connecté
+  if (data.senderId !== socket.data.userId) {
+    socket.emit('error', { message: 'Unauthorized' });
+    return;
+  }
+
+  // Valider les champs requis
+  if (!data.recipientId || !data.content) {
+    socket.emit('error', { message: 'Missing required fields' });
+    return;
+  }
+
+  // Créer le message dans la DB
+  // ...
+});
+```
+
+### Configuration et Optimisation
+
+#### Paramètres Socket.io
+
+```typescript
+// backend/src/server.ts
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+  },
+  pingTimeout: 60000,      // 60s avant de considérer déconnecté
+  pingInterval: 25000,     // Ping tous les 25s
+  reconnection: true,      // Auto-reconnexion
+  reconnectionAttempts: 5  // Max 5 tentatives
+});
+```
+
+#### Rooms et Namespaces
+
+```typescript
+// Rooms par utilisateur
+socket.join(userId);  // Chaque user a sa room
+
+// Rooms pour conversations
+socket.join(`conversation_${conversationId}`);
+
+// Émission ciblée
+io.to(userId).emit('new-message', message);
+io.to(conversationId).emit('typing-indicator', data);
+
+// Broadcast à tous sauf l'émetteur
+socket.broadcast.emit('user-online', userId);
+```
+
+### Endpoints de Santé
+
+```bash
+# Vérifier l'état général
+GET /health
+{
+  "status": "OK",
+  "message": "SuperKids Learning API is running",
+  "timestamp": "2025-11-16T...",
+  "environment": "development"
+}
+
+# Vérifier Socket.io
+GET /health/socket
+{
+  "status": "OK",
+  "onlineUsers": 12,
+  "users": ["user_1", "user_2", ...]
+}
+```
+
+### Logs et Debugging
+
+Tous les événements Socket.io sont loggés:
+
+```typescript
+logger.info(`Socket connected: ${socket.id}`);
+logger.info(`User authenticated: ${userName} (${userId})`);
+logger.info(`Message sent from ${senderId} to ${recipientId}`);
+logger.info(`User ${userId} status changed to ${status}`);
+```
+
+Format des logs:
+```json
+{
+  "level": "info",
+  "message": "Message sent from user_123 to user_456",
+  "timestamp": "2025-11-16T10:30:00.000Z",
+  "service": "socket"
+}
+```
+
 ## Contributeurs
 
 Ce projet a été développé selon les spécifications du document "Application_Apprentissage_Autisme_Specifications.docx" qui s'appuie sur:
@@ -949,10 +1358,18 @@ Propriétaire - Tous droits réservés
   - 100% des méthodes publiques des services testées
   - Mocks Prisma pour isolation
   - Success + Error paths couverts
-- 🚧 Documentation API Swagger (prochaine étape)
-- 🚧 Socket.io temps réel
-- 🚧 Pipeline CI/CD
+- ✅ **Phase 3.4**: Socket.io temps réel - **COMPLÉTÉ**
+  - SocketService backend complet avec 15+ événements
+  - Authentification JWT pour WebSocket
+  - Messagerie instantanée avec indicateurs de frappe
+  - Présence utilisateur (online/offline/away)
+  - Notifications temps réel (messages, progrès, récompenses)
+  - Gestion multi-connexions par utilisateur
+  - Client Socket.io frontend avec types TypeScript
+  - Endpoints de santé Socket.io (/health/socket)
+- 🚧 Documentation API Swagger (Phase 3.3 - prochaine étape)
+- 🚧 Pipeline CI/CD (Phase 3.6)
 
 **Dernière mise à jour**: 16 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
-**Statut**: Phase 3.1 & 3.2 complétées, Phase 3.3 en cours
+**Statut**: Phase 3.1, 3.2 & 3.4 complétées - Socket.io opérationnel !
