@@ -6,6 +6,17 @@ interface ProgressState {
   rewards: Reward[];
   loading: boolean;
   error: string | null;
+  lastFeedback?: {
+    message: string;
+    tokensAwarded: number;
+    badgeUnlocked?: string;
+    recommendedDifficulty?: string;
+  };
+  progression?: {
+    daily: number;
+    weekly: number;
+    mastery: Record<string, number>;
+  };
 }
 
 const initialState: ProgressState = {
@@ -13,6 +24,11 @@ const initialState: ProgressState = {
   rewards: [],
   loading: false,
   error: null,
+  progression: {
+    daily: 0,
+    weekly: 0,
+    mastery: {},
+  },
 };
 
 const progressSlice = createSlice({
@@ -52,6 +68,38 @@ const progressSlice = createSlice({
         state.progress.skillsAcquired[action.payload.skill] = action.payload.level;
       }
     },
+    recordFeedback: (
+      state,
+      action: PayloadAction<{
+        message: string;
+        tokens: number;
+        badgeUnlocked?: string;
+        recommendedDifficulty?: string;
+      }>
+    ) => {
+      if (state.progress) {
+        state.progress.tokensEarned += action.payload.tokens;
+        if (action.payload.badgeUnlocked) {
+          state.progress.rewardsUnlocked.push(action.payload.badgeUnlocked);
+        }
+      }
+      state.lastFeedback = {
+        message: action.payload.message,
+        tokensAwarded: action.payload.tokens,
+        badgeUnlocked: action.payload.badgeUnlocked,
+        recommendedDifficulty: action.payload.recommendedDifficulty,
+      };
+    },
+    updateProgression: (
+      state,
+      action: PayloadAction<{ daily: number; weekly: number; mastery?: Record<string, number> }>
+    ) => {
+      state.progression = {
+        daily: action.payload.daily,
+        weekly: action.payload.weekly,
+        mastery: action.payload.mastery || {},
+      };
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
@@ -68,6 +116,8 @@ export const {
   setRewards,
   incrementStreak,
   updateSkillProficiency,
+  recordFeedback,
+  updateProgression,
   setLoading,
   setError,
 } = progressSlice.actions;

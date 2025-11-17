@@ -1,4 +1,4 @@
-import { PrismaClient, Activity, ActivitySession } from '@prisma/client';
+import { PrismaClient, Activity, ActivitySession, DifficultyLevel } from '@prisma/client';
 import {
   ActivityFilters,
   CreateActivityDTO,
@@ -13,6 +13,53 @@ export class ActivityService {
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+  }
+
+  private calculateSuccessRate(results: SessionResults): number {
+    if (typeof results.successRate === 'number') {
+      return results.successRate;
+    }
+
+    if (results.totalQuestions && results.totalQuestions > 0 && typeof results.correctAnswers === 'number') {
+      return results.correctAnswers / results.totalQuestions;
+    }
+
+    return 0;
+  }
+
+  private determineDifficultyAdjustment(
+    currentDifficulty: DifficultyLevel,
+    successRate: number,
+    supportLevel: string,
+    hintsUsed = 0
+  ): DifficultyLevel {
+    if (successRate >= 0.85 && supportLevel === 'none' && hintsUsed === 0) {
+      if (currentDifficulty === DifficultyLevel.BEGINNER) return DifficultyLevel.INTERMEDIATE;
+      if (currentDifficulty === DifficultyLevel.INTERMEDIATE) return DifficultyLevel.ADVANCED;
+    }
+
+    if (successRate < 0.5 || supportLevel === 'moderate' || supportLevel === 'full') {
+      return DifficultyLevel.BEGINNER;
+    }
+
+    return currentDifficulty;
+  }
+
+  private buildSessionNotes(params: {
+    baseNotes?: string;
+    successRate: number;
+    adjustedDifficulty: DifficultyLevel;
+    attemptsCount: number;
+  }): string {
+    const payload = {
+      feedback: params.successRate >= 0.7 ? 'Succès solide, encourager la progression.' : 'Renforcer avec du soutien.',
+      recommendedDifficulty: params.adjustedDifficulty,
+      attempts: params.attemptsCount,
+      successRate: params.successRate,
+      notes: params.baseNotes,
+    };
+
+    return JSON.stringify(payload);
   }
 
   /**
@@ -184,6 +231,7 @@ export class ActivityService {
         where: { id: sessionId },
         include: {
           child: true,
+          activity: true,
         },
       });
 
@@ -191,17 +239,30 @@ export class ActivityService {
         throw new AppError('Session introuvable', 404);
       }
 
+      const computedSuccessRate = this.calculateSuccessRate(results);
+      const adjustedDifficulty = this.determineDifficultyAdjustment(
+        session.activity?.difficulty || DifficultyLevel.BEGINNER,
+        computedSuccessRate,
+        results.supportLevel,
+        results.hintsUsed
+      );
+
       // Mettre à jour la session
       const updatedSession = await this.prisma.activitySession.update({
         where: { id: sessionId },
         data: {
           endTime: new Date(),
           completed: results.completed,
-          successRate: results.successRate,
+          successRate: computedSuccessRate,
           attemptsCount: results.attemptsCount,
           supportLevel: results.supportLevel,
           emotionalState: results.emotionalState,
-          notes: results.notes,
+          notes: this.buildSessionNotes({
+            baseNotes: results.notes,
+            successRate: computedSuccessRate,
+            adjustedDifficulty,
+            attemptsCount: results.attemptsCount,
+          }),
         },
         include: {
           activity: true,
@@ -211,7 +272,10 @@ export class ActivityService {
 
       // Mettre à jour les progrès de l'enfant
       if (results.completed) {
-        await this.updateChildProgress(session.childId, results);
+        await this.updateChildProgress(session.childId, {
+          ...results,
+          successRate: computedSuccessRate,
+        });
       }
 
       logger.info(`Session complétée: ${sessionId}`);

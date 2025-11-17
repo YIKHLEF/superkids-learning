@@ -278,7 +278,9 @@ describe('ActivityService', () => {
       const sessionId = 'session_123';
       const results = {
         completed: true,
-        successRate: 0.85,
+        successRate: undefined,
+        correctAnswers: 9,
+        totalQuestions: 10,
         attemptsCount: 3,
         supportLevel: 'minimal',
         emotionalState: 'happy',
@@ -289,6 +291,7 @@ describe('ActivityService', () => {
         id: sessionId,
         childId: 'child_123',
         activityId: 'activity_123',
+        activity: { id: 'activity_123', difficulty: 'BEGINNER' },
         child: {
           id: 'child_123',
         },
@@ -298,6 +301,7 @@ describe('ActivityService', () => {
         ...mockSession,
         ...results,
         endTime: expect.any(Date),
+        successRate: 0.9,
       };
 
       const mockProgress = {
@@ -331,9 +335,15 @@ describe('ActivityService', () => {
         where: { id: sessionId },
         data: expect.objectContaining({
           completed: true,
-          successRate: 0.85,
+          successRate: 0.9,
         }),
         include: expect.any(Object),
+      });
+      const capturedNotes = (mockPrisma.activitySession.update as jest.Mock).mock.calls[0][0].data
+        .notes;
+      expect(JSON.parse(capturedNotes)).toMatchObject({
+        recommendedDifficulty: 'INTERMEDIATE',
+        successRate: 0.9,
       });
       expect(result).toEqual(mockUpdatedSession);
     });
@@ -357,6 +367,42 @@ describe('ActivityService', () => {
       await expect(
         activityService.completeActivitySession(sessionId, results)
       ).rejects.toThrow('Session introuvable');
+    });
+
+    it('devrait adapter la difficulté vers le bas quand le score est faible', async () => {
+      const sessionId = 'session_low';
+      const results = {
+        completed: false,
+        attemptsCount: 5,
+        supportLevel: 'moderate',
+        emotionalState: 'frustrated',
+        correctAnswers: 2,
+        totalQuestions: 8,
+      };
+
+      const mockSession = {
+        id: sessionId,
+        childId: 'child_low',
+        activityId: 'activity_low',
+        activity: { id: 'activity_low', difficulty: 'ADVANCED' },
+        child: { id: 'child_low' },
+      };
+
+      (mockPrisma.activitySession.findUnique as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+      (mockPrisma.activitySession.update as jest.Mock).mockResolvedValue({
+        ...mockSession,
+        successRate: 0.25,
+        notes: JSON.stringify({ recommendedDifficulty: 'BEGINNER' }),
+      });
+
+      await activityService.completeActivitySession(sessionId, results);
+
+      const payload = (mockPrisma.activitySession.update as jest.Mock).mock
+        .calls[0][0].data;
+      expect(payload.successRate).toBeCloseTo(0.25);
+      expect(JSON.parse(payload.notes).recommendedDifficulty).toBe('BEGINNER');
     });
   });
 

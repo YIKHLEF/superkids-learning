@@ -118,14 +118,20 @@ export const startSessionSchema = z.object({
 
 export const completeSessionSchema = z.object({
   completed: z.boolean(),
-  successRate: z.number().min(0).max(1).refine(
-    (val) => val >= 0 && val <= 1,
-    { message: 'Le taux de réussite doit être entre 0 et 1' }
-  ),
+  successRate: z
+    .number()
+    .min(0)
+    .max(1)
+    .refine((val) => val >= 0 && val <= 1, { message: 'Le taux de réussite doit être entre 0 et 1' })
+    .optional(),
+  correctAnswers: z.number().int().nonnegative().optional(),
+  totalQuestions: z.number().int().positive().optional(),
   attemptsCount: z.number().int().positive().optional(),
   supportLevel: z.enum(['none', 'minimal', 'moderate', 'substantial']).optional(),
   emotionalState: z.string().optional(),
   notes: z.string().max(1000).optional(),
+  hintsUsed: z.number().int().nonnegative().optional(),
+  timeSpentSeconds: z.number().int().nonnegative().optional(),
   responses: z.array(z.any()).optional(),
 });
 

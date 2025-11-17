@@ -137,6 +137,13 @@ superkids-learning/
 - Backend: `src/controllers/activity.controller.ts`
 - Base de données: `Activity`, `ActivitySession` models
 
+**Composants interactifs inclus**:
+- Drag & Drop des émotions (régulation émotionnelle)
+- Tableau CAA (communication augmentée)
+- Jeux mathématiques adaptatifs (difficulté dynamique)
+- Séquences d'autonomie (checklist guidée)
+- Exercices de respiration (rituel 4-2-4)
+
 ### Module 3: Système de Récompenses et Motivation
 **Objectif**: Encourager l'engagement et célébrer les progrès
 
@@ -157,6 +164,11 @@ superkids-learning/
 - Frontend: `src/pages/Dashboard.tsx`, `src/store/slices/progressSlice.ts`
 - Backend: `src/controllers/progress.controller.ts`
 - Base de données: `Progress`, `Reward` models
+
+**Nouveautés UX**:
+- Feedback immédiat (jetons/badges) après chaque activité
+- Barre de progression hebdomadaire et par compétence
+- Recommandation de prochaine difficulté à partir des scores
 
 ### Module 4: Suivi et Analytiques
 **Objectif**: Fournir des données détaillées sur les progrès de l'enfant
