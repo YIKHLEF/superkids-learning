@@ -16,17 +16,29 @@ import {
   Chip,
   Stack,
   MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  useTheme,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { RootState } from '../store';
 import { togglePreference, updateIepGoals, updateRoles, updateSensoryPreferences } from '../store/slices/profileSlice';
-import { toggleSetting, setFontSize } from '../store/slices/settingsSlice';
+import {
+  toggleSetting,
+  setFontSize,
+  setPalette,
+  setContrastLevel,
+  setColorScheme,
+  setGlobalVolume,
+} from '../store/slices/settingsSlice';
 import { IEPGoal, SensoryPreference, UserRole } from '../types';
 
 const ProfilePage: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
   const settings = useSelector((state: RootState) => state.settings.accessibility);
+  const theme = useTheme();
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarName, setAvatarName] = useState('');
   const [uploadMessage, setUploadMessage] = useState('');
@@ -52,6 +64,12 @@ const ProfilePage: React.FC = () => {
     const sizes: Array<keyof typeof fontSizeMap> = ['small', 'medium', 'large', 'extra-large'];
     const index = Math.floor((value / 100) * (sizes.length - 1));
     dispatch(setFontSize(sizes[index]));
+  };
+
+  const handleContrastChange = (value: number) => {
+    const levels: Array<typeof settings.contrastLevel> = ['standard', 'high', 'maximum'];
+    const index = Math.floor((value / 100) * (levels.length - 1));
+    dispatch(setContrastLevel(levels[index]));
   };
 
   const validateAvatar = (file: File) => {
@@ -221,12 +239,117 @@ const ProfilePage: React.FC = () => {
                 ))}
               </Stack>
 
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Préférences sensorielles & UI
+              </Typography>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel id="palette-label">Palette neuro-inclusive</InputLabel>
+                    <Select
+                      labelId="palette-label"
+                      label="Palette neuro-inclusive"
+                      value={settings.palette}
+                      onChange={(event) => dispatch(setPalette(event.target.value as typeof settings.palette))}
+                    >
+                      <MenuItem value="calm">Apaisante</MenuItem>
+                      <MenuItem value="vibrant">Stimulante douce</MenuItem>
+                      <MenuItem value="monochrome">Monochrome</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel id="color-scheme-label">Contraste clair/sombre</InputLabel>
+                    <Select
+                      labelId="color-scheme-label"
+                      label="Contraste clair/sombre"
+                      value={settings.colorScheme}
+                      onChange={(event) => dispatch(setColorScheme(event.target.value as typeof settings.colorScheme))}
+                    >
+                      <MenuItem value="light">Clair</MenuItem>
+                      <MenuItem value="dark">Sombre</MenuItem>
+                      <MenuItem value="auto">Auto</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    Intensité du contraste
+                  </Typography>
+                  <Slider
+                    aria-label="Intensité du contraste"
+                    value={
+                      ['standard', 'high', 'maximum'].indexOf(settings.contrastLevel) *
+                      (100 / (['standard', 'high', 'maximum'].length - 1))
+                    }
+                    onChange={(_, value) => handleContrastChange(value as number)}
+                    step={50}
+                    marks
+                    min={0}
+                    max={100}
+                    sx={{ maxWidth: 360, mb: 2 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                    Niveau actuel : {settings.contrastLevel}
+                  </Typography>
+
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    Volume global
+                  </Typography>
+                  <Slider
+                    aria-label="Volume global"
+                    value={settings.globalVolume}
+                    onChange={(_, value) => dispatch(setGlobalVolume(value as number))}
+                    step={10}
+                    marks
+                    min={0}
+                    max={100}
+                    sx={{ maxWidth: 360, mb: 2 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {settings.globalVolume === 0
+                      ? 'Sons désactivés'
+                      : `Volume à ${settings.globalVolume}%`}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: theme.palette.background.paper,
+                      color: theme.palette.text.primary,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    }}
+                    aria-label="Prévisualisation du thème"
+                  >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
+                      Prévisualisation immédiate
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Typographie actuelle, contrastes et palette appliqués en direct.
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                      <Chip label="Bouton" color="primary" />
+                      <Chip label="Secondaire" color="secondary" />
+                      <Chip label="Texte" variant="outlined" />
+                    </Stack>
+                  </Box>
+                </Grid>
+              </Grid>
+
               <Box sx={{ mb: 3 }}>
                 <FormControlLabel
                   control={
                     <Switch
                       checked={profile?.preferences.soundEnabled ?? true}
-                      onChange={() => dispatch(togglePreference('soundEnabled'))}
+                      onChange={() => {
+                        dispatch(togglePreference('soundEnabled'));
+                        dispatch(toggleSetting('soundEnabled'));
+                      }}
                     />
                   }
                   label={
@@ -241,7 +364,10 @@ const ProfilePage: React.FC = () => {
                   control={
                     <Switch
                       checked={profile?.preferences.animationsEnabled ?? true}
-                      onChange={() => dispatch(togglePreference('animationsEnabled'))}
+                      onChange={() => {
+                        dispatch(togglePreference('animationsEnabled'));
+                        dispatch(toggleSetting('animationsEnabled'));
+                      }}
                     />
                   }
                   label={
@@ -256,7 +382,10 @@ const ProfilePage: React.FC = () => {
                   control={
                     <Switch
                       checked={profile?.preferences.dyslexiaMode ?? false}
-                      onChange={() => dispatch(togglePreference('dyslexiaMode'))}
+                      onChange={() => {
+                        dispatch(togglePreference('dyslexiaMode'));
+                        dispatch(toggleSetting('dyslexiaFont'));
+                      }}
                     />
                   }
                   label={
@@ -271,7 +400,10 @@ const ProfilePage: React.FC = () => {
                   control={
                     <Switch
                       checked={profile?.preferences.highContrastMode ?? false}
-                      onChange={() => dispatch(togglePreference('highContrastMode'))}
+                      onChange={() => {
+                        dispatch(togglePreference('highContrastMode'));
+                        dispatch(toggleSetting('highContrast'));
+                      }}
                     />
                   }
                   label={
@@ -279,6 +411,18 @@ const ProfilePage: React.FC = () => {
                       Mode haute contraste
                     </Typography>
                   }
+                  sx={{ mb: 2 }}
+                />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.audioCuesEnabled}
+                      onChange={() => dispatch(toggleSetting('audioCuesEnabled'))}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '1rem' }}>Indices audio discrets</Typography>}
+                  sx={{ mb: 2 }}
                 />
               </Box>
 

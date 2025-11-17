@@ -157,6 +157,11 @@ superkids-learning/
 - Le frontend envoie désormais les événements de démarrage, d'essais, de réussite et d'état émotionnel via `frontend/src/services/analytics.service.ts`.
 - Le backend expose `/api/progress/events` pour collecter et agréger ces événements, enrichissant `ActivitySession` et `Progress` avec la durée, les essais, le taux de réussite et l'état émotionnel dominant.
 
+### Thème et préférences sensorielles (nouveau)
+- `frontend/src/store/slices/settingsSlice.ts` gère maintenant le contraste (standard/élevé/maximal), les palettes neuro-inclusives (calme, vibrante, monochrome), le volume global et les animations/audio cues.
+- `frontend/src/styles/theme.ts` construit dynamiquement le thème MUI via `createAppTheme` pour appliquer police dyslexie, contrastes et mouvements réduits.
+- `frontend/src/pages/ProfilePage.tsx` expose une section « Préférences sensorielles & UI » avec prévisualisation immédiate et synchronisation des préférences de profil.
+
 ### Module 3: Système de Récompenses et Motivation
 **Objectif**: Encourager l'engagement et célébrer les progrès
 
