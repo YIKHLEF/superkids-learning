@@ -50,6 +50,7 @@ export interface ActivityFilters {
   category?: ActivityCategory;
   difficulty?: DifficultyLevel;
   search?: string;
+  ebpTag?: string;
 }
 
 export interface CreateActivityDTO {
@@ -62,6 +63,7 @@ export interface CreateActivityDTO {
   videoUrl?: string;
   instructions: string[];
   targetSkills: string[];
+  ebpTags?: string[];
 }
 
 export interface SessionResults {

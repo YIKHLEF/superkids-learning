@@ -75,6 +75,7 @@ export interface Activity {
   videoUrl?: string;
   instructions: string[];
   targetSkills: string[];
+  ebpTags: string[];
   createdAt: Date;
 }
 

@@ -28,12 +28,19 @@ interface ActivityModule {
   category: ActivityCategory;
   difficulty: DifficultyLevel;
   duration: number;
-  renderer: (onSuccess: (reward: ActivityReward) => void) => React.ReactNode;
+  instructions: string[];
+  ebpTags: string[];
+  renderer: (
+    onSuccess: (reward: ActivityReward) => void,
+    metadata: { ebpTags: string[]; instructions: string[] }
+  ) => React.ReactNode;
   badge?: string;
 }
 
 const ActivitiesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory | 'all'>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | 'all'>('all');
+  const [selectedEbpTag, setSelectedEbpTag] = useState<string>('all');
   const dispatch = useDispatch<AppDispatch>();
   const rewardsLoading = useSelector((state: RootState) => state.rewards.loading);
   const childId = 'demo-child-01';
@@ -125,6 +132,13 @@ const ActivitiesPage: React.FC = () => {
     { value: ActivityCategory.EMOTIONAL_REGULATION, label: 'Émotions', icon: <EmotionalIcon /> },
   ];
 
+  const difficultyFilters: { value: DifficultyLevel | 'all'; label: string }[] = [
+    { value: 'all', label: 'Tous les niveaux' },
+    { value: DifficultyLevel.BEGINNER, label: 'Débutant' },
+    { value: DifficultyLevel.INTERMEDIATE, label: 'Intermédiaire' },
+    { value: DifficultyLevel.ADVANCED, label: 'Avancé' },
+  ];
+
   const modules: ActivityModule[] = useMemo(
     () => [
       {
@@ -134,7 +148,15 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.EMOTIONAL_REGULATION,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 8,
-        renderer: (onSuccess) => <EmotionDragDrop onSuccess={onSuccess} />,
+        instructions: [
+          'Observe le visage proposé',
+          'Sélectionne le pictogramme correspondant',
+          'Valide la paire pour passer à l\'émotion suivante',
+        ],
+        ebpTags: ['Modeling', 'Visual Supports'],
+        renderer: (onSuccess, metadata) => (
+          <EmotionDragDrop onSuccess={onSuccess} metadata={metadata} />
+        ),
         badge: 'Empathie',
       },
       {
@@ -144,7 +166,13 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.COMMUNICATION,
         difficulty: DifficultyLevel.INTERMEDIATE,
         duration: 6,
-        renderer: (onSuccess) => <CaaBoard onSuccess={onSuccess} />,
+        instructions: [
+          'Choisis un pictogramme pour initier ta demande',
+          'Assemble au moins quatre éléments pour une phrase complète',
+          'Valide l\'expression et observe la réponse',
+        ],
+        ebpTags: ['Augmentative Communication', 'Prompting'],
+        renderer: (onSuccess, metadata) => <CaaBoard onSuccess={onSuccess} metadata={metadata} />,
         badge: 'Communicateur',
       },
       {
@@ -154,7 +182,15 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.ACADEMIC,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 12,
-        renderer: (onSuccess) => <AdaptiveMathGame onSuccess={onSuccess} />,
+        instructions: [
+          'Lis l\'énoncé mathématique',
+          'Choisis la réponse correcte',
+          'Suis l\'ajustement automatique de la difficulté',
+        ],
+        ebpTags: ['Technology-Aided Instruction', 'Reinforcement'],
+        renderer: (onSuccess, metadata) => (
+          <AdaptiveMathGame onSuccess={onSuccess} metadata={metadata} />
+        ),
         badge: 'Logique',
       },
       {
@@ -164,7 +200,15 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.AUTONOMY,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 7,
-        renderer: (onSuccess) => <AutonomySequence onSuccess={onSuccess} />,
+        instructions: [
+          'Lis la consigne de l\'étape affichée',
+          'Réalise l\'action et coche la case',
+          'Continue jusqu\'à terminer la routine',
+        ],
+        ebpTags: ['Task Analysis', 'Visual Supports'],
+        renderer: (onSuccess, metadata) => (
+          <AutonomySequence onSuccess={onSuccess} metadata={metadata} />
+        ),
         badge: 'Autonome',
       },
       {
@@ -174,17 +218,38 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.EMOTIONAL_REGULATION,
         difficulty: DifficultyLevel.INTERMEDIATE,
         duration: 5,
-        renderer: (onSuccess) => <BreathingExercise onSuccess={onSuccess} />,
+        instructions: [
+          'Démarre le rythme en suivant la puce active',
+          'Inspire 4 secondes, bloque 2 secondes, expire 4 secondes',
+          'Répète le cycle jusqu\'à stabiliser ta respiration',
+        ],
+        ebpTags: ['Cognitive Behavioral Intervention', 'Relaxation'],
+        renderer: (onSuccess, metadata) => (
+          <BreathingExercise onSuccess={onSuccess} metadata={metadata} />
+        ),
         badge: 'Zen',
       },
     ],
     []
   );
 
-  const filteredModules =
-    selectedCategory === 'all'
-      ? modules
-      : modules.filter((module) => module.category === selectedCategory);
+  const ebpOptions = useMemo(
+    () => ['all', ...new Set(modules.flatMap((module) => module.ebpTags))],
+    [modules]
+  );
+
+  const filteredModules = useMemo(
+    () =>
+      modules
+        .filter((module) => selectedCategory === 'all' || module.category === selectedCategory)
+        .filter((module) =>
+          selectedDifficulty === 'all' ? true : module.difficulty === selectedDifficulty
+        )
+        .filter((module) =>
+          selectedEbpTag === 'all' ? true : module.ebpTags.includes(selectedEbpTag)
+        ),
+    [modules, selectedCategory, selectedDifficulty, selectedEbpTag]
+  );
 
   const adaptiveModules = useMemo(() => {
     const ordered = applyRecommendation(filteredModules);
@@ -286,6 +351,35 @@ const ActivitiesPage: React.FC = () => {
         ))}
       </Box>
 
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        sx={{ mb: 3, alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+          {difficultyFilters.map((difficulty) => (
+            <Chip
+              key={difficulty.value}
+              label={difficulty.label}
+              color={selectedDifficulty === difficulty.value ? 'primary' : 'default'}
+              onClick={() => setSelectedDifficulty(difficulty.value)}
+              variant={selectedDifficulty === difficulty.value ? 'filled' : 'outlined'}
+            />
+          ))}
+        </Stack>
+        <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+          {ebpOptions.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag === 'all' ? 'Tous les EBP' : tag}
+              color={selectedEbpTag === tag ? 'secondary' : 'default'}
+              onClick={() => setSelectedEbpTag(tag)}
+              variant={selectedEbpTag === tag ? 'filled' : 'outlined'}
+            />
+          ))}
+        </Stack>
+      </Stack>
+
       <Grid container spacing={3}>
         {adaptiveModules.map((module) => (
           <Grid item xs={12} md={6} key={module.id}>
@@ -318,11 +412,28 @@ const ActivitiesPage: React.FC = () => {
                   />
                 )}
               </Box>
+              <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+                {module.ebpTags.map((tag) => (
+                  <Chip key={tag} label={`EBP: ${tag}`} size="small" color="info" variant="outlined" />
+                ))}
+              </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {module.description}
               </Typography>
-              {module.renderer((reward) =>
-                handleActivityReward(reward, module as ActivityModule & { suggestedDifficulty?: DifficultyLevel })
+              <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+                {module.instructions.map((step) => (
+                  <Typography key={step} component="li" variant="body2" color="text.secondary">
+                    {step}
+                  </Typography>
+                ))}
+              </Stack>
+              {module.renderer(
+                (reward) =>
+                  handleActivityReward(
+                    reward,
+                    module as ActivityModule & { suggestedDifficulty?: DifficultyLevel }
+                  ),
+                { ebpTags: module.ebpTags, instructions: module.instructions }
               )}
             </Box>
           </Grid>

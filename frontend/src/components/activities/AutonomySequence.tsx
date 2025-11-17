@@ -5,9 +5,10 @@ import analyticsService from '../../services/analytics.service';
 
 interface AutonomySequenceProps {
   onSuccess?: (reward: ActivityReward) => void;
+  metadata?: { ebpTags?: string[]; instructions?: string[] };
 }
 
-const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess }) => {
+const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess, metadata }) => {
   const childId = 'demo-child';
   const difficulty = DifficultyLevel.BEGINNER;
   const steps = useMemo(
@@ -77,11 +78,27 @@ const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess }) => {
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Séquences d'autonomie
         </Typography>
+        {metadata?.ebpTags && metadata.ebpTags.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            {metadata.ebpTags.map((tag) => (
+              <Chip key={tag} label={`EBP: ${tag}`} color="info" size="small" variant="outlined" />
+            ))}
+          </Stack>
+        )}
         <Alert severity={progress === 100 ? 'success' : 'info'} sx={{ mb: 2 }}>
           {progress === 100
             ? 'Routine terminée, bravo !'
             : 'Coche chaque étape pour suivre la routine.'}
         </Alert>
+        {metadata?.instructions && metadata.instructions.length > 0 && (
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+            {metadata.instructions.map((instruction) => (
+              <Typography key={instruction} component="li" variant="body2" color="text.secondary">
+                {instruction}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
           {steps.map((step) => (
             <FormControlLabel

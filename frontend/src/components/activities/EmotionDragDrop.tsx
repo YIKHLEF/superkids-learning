@@ -6,9 +6,10 @@ import analyticsService from '../../services/analytics.service';
 interface EmotionDragDropProps {
   onComplete?: (summary: { matched: number; total: number }) => void;
   onSuccess?: (reward: ActivityReward) => void;
+  metadata?: { ebpTags?: string[]; instructions?: string[] };
 }
 
-const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess }) => {
+const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess, metadata }) => {
   const childId = 'demo-child';
   const difficulty = DifficultyLevel.BEGINNER;
   const emotions = useMemo(
@@ -82,9 +83,25 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Drag & Drop des émotions
         </Typography>
+        {metadata?.ebpTags && metadata.ebpTags.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            {metadata.ebpTags.map((tag) => (
+              <Chip key={tag} label={`EBP: ${tag}`} color="info" size="small" variant="outlined" />
+            ))}
+          </Stack>
+        )}
         <Alert severity={matched.length === emotions.length ? 'success' : 'info'} sx={{ mb: 2 }}>
           {feedback}
         </Alert>
+        {metadata?.instructions && metadata.instructions.length > 0 && (
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+            {metadata.instructions.map((instruction) => (
+              <Typography key={instruction} component="li" variant="body2" color="text.secondary">
+                {instruction}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           {emotions.map((emotion) => (
             <Chip key={emotion.label} label={`${emotion.emoji} ${emotion.label}`} color="secondary" />

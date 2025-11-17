@@ -117,6 +117,28 @@ describe('ActivityService', () => {
       });
       expect(result).toEqual(mockActivities);
     });
+
+    it('devrait filtrer les activités par tag EBP', async () => {
+      const mockActivities = [
+        {
+          id: 'activity_1',
+          title: 'Séquences visuelles',
+          ebpTags: ['Visual Supports'],
+        },
+      ];
+
+      (mockPrisma.activity.findMany as jest.Mock).mockResolvedValue(mockActivities);
+
+      const result = await activityService.getAllActivities({ ebpTag: 'Visual Supports' });
+
+      expect(mockPrisma.activity.findMany).toHaveBeenCalledWith({
+        where: {
+          ebpTags: { has: 'Visual Supports' },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result).toEqual(mockActivities);
+    });
   });
 
   describe('getActivityById', () => {

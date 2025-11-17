@@ -5,9 +5,10 @@ import analyticsService from '../../services/analytics.service';
 
 interface BreathingExerciseProps {
   onSuccess?: (reward: ActivityReward) => void;
+  metadata?: { ebpTags?: string[]; instructions?: string[] };
 }
 
-const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
+const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess, metadata }) => {
   const childId = 'demo-child';
   const difficulty = DifficultyLevel.BEGINNER;
   const cycles = useMemo(
@@ -79,9 +80,25 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
           </Typography>
           <Chip label={`${cyclesDone} cycles`} size="small" color="success" />
         </Stack>
+        {metadata?.ebpTags && metadata.ebpTags.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            {metadata.ebpTags.map((tag) => (
+              <Chip key={tag} label={`EBP: ${tag}`} color="info" size="small" variant="outlined" />
+            ))}
+          </Stack>
+        )}
         <Typography variant="body1" sx={{ mb: 2 }}>
           Suis le rythme 4-2-4 pour te calmer.
         </Typography>
+        {metadata?.instructions && metadata.instructions.length > 0 && (
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+            {metadata.instructions.map((instruction) => (
+              <Typography key={instruction} component="li" variant="body2" color="text.secondary">
+                {instruction}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
           {cycles.map((cycle, index) => (
             <Chip

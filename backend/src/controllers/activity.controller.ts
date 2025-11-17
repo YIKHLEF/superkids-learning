@@ -1,25 +1,26 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { ServiceFactory } from '../services';
+import { ActivityFilters } from '../types';
 
-export const getAllActivities = async (req: Request, res: Response) => {
-  res.json({
-    status: 'success',
-    data: {
-      activities: [
-        {
-          id: '1',
-          title: 'Reconnaissance des émotions',
-          description: 'Apprends à identifier les différentes émotions',
-          category: 'SOCIAL_SKILLS',
-          difficulty: 'BEGINNER',
-          duration: 10,
-          thumbnailUrl: null,
-          videoUrl: null,
-          instructions: ['Regarde chaque visage', 'Identifie l\'émotion', 'Clique sur la bonne réponse'],
-          targetSkills: ['reconnaissance_emotions', 'empathie'],
-        },
-      ],
-    },
-  });
+export const getAllActivities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const service = ServiceFactory.getActivityService();
+    const filters: ActivityFilters = {
+      category: req.query.category as any,
+      difficulty: req.query.difficulty as any,
+      search: req.query.search as string,
+      ebpTag: req.query.ebp as string,
+    };
+
+    const activities = await service.getAllActivities(filters);
+    res.json({ success: true, data: activities });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getActivityById = async (req: Request, res: Response) => {

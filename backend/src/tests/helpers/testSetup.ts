@@ -87,6 +87,7 @@ export async function createTestActivity(): Promise<any> {
       videoUrl: null,
       instructions: ['Observer les visages et identifier les émotions'],
       targetSkills: ['Reconnaissance émotionnelle', 'Empathie'],
+      ebpTags: ['Visual Supports'],
     },
   });
 }
