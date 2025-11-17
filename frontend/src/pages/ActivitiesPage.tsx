@@ -1,18 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Grid, Button, Typography, Chip } from '@mui/material';
+import { Box, Grid, Button, Typography, Chip, Stack, Tooltip, IconButton } from '@mui/material';
 import {
   EmojiPeople as SocialIcon,
   Chat as CommunicationIcon,
   School as AcademicIcon,
   Person as AutonomyIcon,
   Favorite as EmotionalIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { ActivityCategory, DifficultyLevel } from '../types';
+import { ActivityCategory, DifficultyLevel, AdaptiveContext, SensoryPreference } from '../types';
 import EmotionDragDrop from '../components/activities/EmotionDragDrop';
 import CaaBoard from '../components/activities/CaaBoard';
 import AdaptiveMathGame from '../components/activities/AdaptiveMathGame';
 import AutonomySequence from '../components/activities/AutonomySequence';
 import BreathingExercise from '../components/activities/BreathingExercise';
+import useAdaptiveLevel from '../hooks/useAdaptiveLevel';
 
 interface ActivityModule {
   id: string;
@@ -27,6 +29,39 @@ interface ActivityModule {
 
 const ActivitiesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory | 'all'>('all');
+
+  const adaptiveContext = useMemo<AdaptiveContext>(() => {
+    const category = selectedCategory === 'all' ? ActivityCategory.SOCIAL_SKILLS : selectedCategory;
+
+    return {
+      childId: 'demo-child-01',
+      targetCategory: category,
+      currentDifficulty: DifficultyLevel.INTERMEDIATE,
+      recentPerformance: [
+        {
+          successRate: 0.72,
+          attemptsCount: 3,
+          averageTimePerQuestion: 22,
+          emotionalState: 'calm',
+          supportLevel: 'minimal',
+        },
+        {
+          successRate: 0.55,
+          attemptsCount: 4,
+          emotionalState: 'engaged',
+        },
+      ],
+      currentActivityId: 'emotions-dnd',
+      personalization: {
+        prefersLowStimuli: true,
+        shortSessionsPreferred: true,
+        regulationNeeded: category === ActivityCategory.EMOTIONAL_REGULATION,
+      },
+      sensoryPreferences: [SensoryPreference.LOW_STIMULATION],
+    };
+  }, [selectedCategory]);
+
+  const { recommendation, loading, error, source, refresh, applyRecommendation } = useAdaptiveLevel(adaptiveContext);
 
   const categories = [
     { value: 'all', label: 'Toutes', icon: null },
@@ -98,6 +133,34 @@ const ActivitiesPage: React.FC = () => {
       ? modules
       : modules.filter((module) => module.category === selectedCategory);
 
+  const adaptiveModules = useMemo(() => {
+    const ordered = applyRecommendation(filteredModules);
+
+    return ordered.map((module) => {
+      const suggestedDifficulty = (module as any).suggestedDifficulty || module.difficulty;
+      const adaptiveWeight = (module as any).adaptiveWeight ?? 0;
+
+      const adjustedDuration = (() => {
+        if (suggestedDifficulty === DifficultyLevel.ADVANCED) return module.duration + 4;
+        if (suggestedDifficulty === DifficultyLevel.INTERMEDIATE) return module.duration + 2;
+        return Math.max(module.duration - 1, 3);
+      })();
+
+      const adaptiveBadge =
+        suggestedDifficulty !== module.difficulty
+          ? `Niveau suggéré: ${suggestedDifficulty}`
+          : recommendation?.rationale?.[0] || module.badge;
+
+      return {
+        ...module,
+        suggestedDifficulty,
+        adaptiveWeight,
+        adjustedDuration,
+        adaptiveBadge,
+      };
+    });
+  }, [applyRecommendation, filteredModules, recommendation]);
+
   const getDifficultyColor = (difficulty: DifficultyLevel) => {
     switch (difficulty) {
       case DifficultyLevel.BEGINNER:
@@ -120,6 +183,42 @@ const ActivitiesPage: React.FC = () => {
         Choisis une activité interactive pour commencer à apprendre en t'amusant!
       </Typography>
 
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        sx={{ mb: 3, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
+      >
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Chip
+            color={source === 'remote' ? 'primary' : source === 'fallback' ? 'warning' : 'default'}
+            label={
+              loading
+                ? 'Suggestion en cours...'
+                : source === 'remote'
+                ? 'Suggestion ML/Backend'
+                : source === 'fallback'
+                ? 'Heuristique locale'
+                : 'Suggestion par défaut'
+            }
+          />
+          {recommendation?.nextDifficulty && (
+            <Chip
+              variant="outlined"
+              color="secondary"
+              label={`Prochaine difficulté cible: ${recommendation.nextDifficulty}`}
+            />
+          )}
+          {error && <Chip color="error" label={error} />}
+        </Stack>
+        <Tooltip title="Rafraîchir la recommandation">
+          <span>
+            <IconButton onClick={refresh} disabled={loading} color="primary">
+              <RefreshIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Stack>
+
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
         {categories.map((category) => (
           <Button
@@ -135,7 +234,7 @@ const ActivitiesPage: React.FC = () => {
       </Box>
 
       <Grid container spacing={3}>
-        {filteredModules.map((module) => (
+        {adaptiveModules.map((module) => (
           <Grid item xs={12} md={6} key={module.id}>
             <Box
               sx={{
@@ -150,9 +249,21 @@ const ActivitiesPage: React.FC = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   {module.title}
                 </Typography>
-                <Chip label={module.difficulty} size="small" color={getDifficultyColor(module.difficulty)} />
-                <Chip label={`${module.duration} min`} size="small" variant="outlined" />
-                {module.badge && <Chip label={`Badge: ${module.badge}`} size="small" color="secondary" />}
+                <Chip
+                  label={module.suggestedDifficulty || module.difficulty}
+                  size="small"
+                  color={getDifficultyColor(module.suggestedDifficulty || module.difficulty)}
+                />
+                <Chip label={`${module.adjustedDuration || module.duration} min`} size="small" variant="outlined" />
+                {module.adaptiveBadge && <Chip label={`Badge: ${module.adaptiveBadge}`} size="small" color="secondary" />}
+                {module.adaptiveWeight > 0 && (
+                  <Chip
+                    label={`Poids adaptatif: ${(module.adaptiveWeight * 100).toFixed(0)}%`}
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                  />
+                )}
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {module.description}

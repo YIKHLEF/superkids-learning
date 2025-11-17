@@ -32,6 +32,10 @@ export class AdaptiveService {
     this.mlEnabled = options.mlEnabled ?? process.env.ADAPTIVE_ML_ENABLED === 'true';
   }
 
+  isMlActive(): boolean {
+    return this.mlEnabled && !!this.mlEndpoint;
+  }
+
   /**
    * Orchestration: tente d'appeler le modèle ML si activé, sinon
    * applique le modèle heuristique interne.
@@ -55,7 +59,11 @@ export class AdaptiveService {
    */
   generateHeuristicRecommendation(context: AdaptiveContext): AdaptiveRecommendation {
     const latest = context.recentPerformance[0] as PerformanceSignal | undefined;
-    const nextDifficulty = this.adjustDifficulty(context.currentDifficulty, latest);
+    const nextDifficulty = this.adjustDifficulty(
+      context.currentDifficulty,
+      latest,
+      context.sensoryPreferences
+    );
 
     const recommendations: ActivityRecommendation[] = [
       {
@@ -91,10 +99,22 @@ export class AdaptiveService {
       });
     }
 
+    if (context.sensoryPreferences?.includes('LOW_STIMULATION')) {
+      recommendations.forEach((rec) => {
+        if (rec.difficulty === DifficultyLevel.ADVANCED) {
+          rec.weight *= 0.8;
+        }
+      });
+    }
+
     const rationale: string[] = [
       `Taux de réussite récent: ${latest?.successRate ?? 'N/A'} (${latest?.attemptsCount ?? 0} tentatives)`,
       `Heuristique appliquée: ${this.describeDifficultyChange(context.currentDifficulty, nextDifficulty)}`,
     ];
+
+    if (context.sensoryPreferences?.length) {
+      rationale.push(`Préférences sensorielles prises en compte: ${context.sensoryPreferences.join(', ')}`);
+    }
 
     const escalationWarnings = latest && latest.emotionalState === 'frustrated'
       ? ['Observé: signes de frustration. Prévoir pause sensorielle.']
@@ -114,7 +134,8 @@ export class AdaptiveService {
    */
   private adjustDifficulty(
     current: DifficultyLevel,
-    performance?: PerformanceSignal
+    performance?: PerformanceSignal,
+    sensoryPreferences?: string[]
   ): DifficultyLevel {
     if (!performance) {
       return current;
@@ -122,7 +143,14 @@ export class AdaptiveService {
 
     const { successRate, attemptsCount, emotionalState } = performance;
 
-    if (successRate > 0.85 && attemptsCount <= 2 && emotionalState !== 'frustrated') {
+    const prefersLowStimuli = sensoryPreferences?.includes('LOW_STIMULATION');
+
+    if (
+      successRate > 0.85 &&
+      attemptsCount <= 2 &&
+      emotionalState !== 'frustrated' &&
+      !prefersLowStimuli
+    ) {
       return current === DifficultyLevel.ADVANCED
         ? DifficultyLevel.ADVANCED
         : current === DifficultyLevel.INTERMEDIATE
@@ -136,6 +164,10 @@ export class AdaptiveService {
         : current === DifficultyLevel.INTERMEDIATE
         ? DifficultyLevel.BEGINNER
         : DifficultyLevel.INTERMEDIATE;
+    }
+
+    if (prefersLowStimuli && current === DifficultyLevel.ADVANCED) {
+      return DifficultyLevel.INTERMEDIATE;
     }
 
     return current;
@@ -168,6 +200,7 @@ export class AdaptiveService {
         targetCategory: context.targetCategory,
         recentPerformance: context.recentPerformance,
         personalization: context.personalization,
+        sensoryPreferences: context.sensoryPreferences,
       }),
     });
 

@@ -205,6 +205,86 @@ const swaggerDefinition: SwaggerDefinition = {
           },
         },
       },
+      PerformanceSignal: {
+        type: 'object',
+        properties: {
+          successRate: { type: 'number', format: 'float' },
+          attemptsCount: { type: 'integer' },
+          averageTimePerQuestion: { type: 'number', format: 'float', nullable: true },
+          emotionalState: { type: 'string', nullable: true },
+          supportLevel: {
+            type: 'string',
+            enum: ['none', 'minimal', 'moderate', 'full'],
+            nullable: true,
+          },
+        },
+      },
+      AdaptiveContext: {
+        type: 'object',
+        required: ['childId', 'targetCategory', 'currentDifficulty', 'recentPerformance'],
+        properties: {
+          childId: { type: 'string', format: 'uuid' },
+          targetCategory: {
+            type: 'string',
+            enum: ['SOCIAL_SKILLS', 'COMMUNICATION', 'ACADEMIC', 'AUTONOMY', 'EMOTIONAL_REGULATION'],
+          },
+          currentDifficulty: { type: 'string', enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] },
+          currentActivityId: { type: 'string', nullable: true },
+          sensoryPreferences: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['LOW_STIMULATION', 'MEDIUM_STIMULATION', 'HIGH_CONTRAST', 'MONOCHROME'],
+            },
+            nullable: true,
+          },
+          personalization: {
+            type: 'object',
+            properties: {
+              prefersLowStimuli: { type: 'boolean' },
+              shortSessionsPreferred: { type: 'boolean' },
+              regulationNeeded: { type: 'boolean' },
+            },
+          },
+          recentPerformance: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/PerformanceSignal' },
+          },
+        },
+      },
+      ActivityRecommendation: {
+        type: 'object',
+        properties: {
+          category: {
+            type: 'string',
+            enum: ['SOCIAL_SKILLS', 'COMMUNICATION', 'ACADEMIC', 'AUTONOMY', 'EMOTIONAL_REGULATION'],
+          },
+          difficulty: { type: 'string', enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] },
+          weight: { type: 'number', format: 'float' },
+          reason: { type: 'string' },
+          suggestedActivityId: { type: 'string', nullable: true },
+        },
+      },
+      AdaptiveRecommendation: {
+        type: 'object',
+        properties: {
+          childId: { type: 'string', format: 'uuid' },
+          nextDifficulty: { type: 'string', enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] },
+          recommendations: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ActivityRecommendation' },
+          },
+          rationale: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          escalationWarnings: {
+            type: 'array',
+            items: { type: 'string' },
+            nullable: true,
+          },
+        },
+      },
       Error: {
         type: 'object',
         properties: {
@@ -295,6 +375,10 @@ const swaggerDefinition: SwaggerDefinition = {
     {
       name: 'Messages',
       description: 'Messagerie entre utilisateurs',
+    },
+    {
+      name: 'Adaptive',
+      description: 'Recommandations adaptatives et moteur ML/heuristique',
     },
     {
       name: 'Health',

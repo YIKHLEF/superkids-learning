@@ -14,6 +14,7 @@ import activityRoutes from './routes/activity.routes';
 import progressRoutes from './routes/progress.routes';
 import resourceRoutes from './routes/resource.routes';
 import messageRoutes from './routes/message.routes';
+import adaptiveRoutes from './routes/adaptive.routes';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -177,6 +178,7 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/adaptive', adaptiveRoutes);
 
 // Gestion des erreurs
 app.use(errorHandler);
