@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test:stories": "jest src/stories/__tests__/criticalStories.test.tsx"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -28,14 +31,26 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^8.1.4",
+    "@storybook/addon-essentials": "^8.1.4",
+    "@storybook/addon-interactions": "^8.1.4",
+    "@storybook/jest": "^0.2.3",
+    "@storybook/react": "^8.1.4",
+    "@storybook/react-vite": "^8.1.4",
+    "@storybook/testing-react": "^2.0.0",
+    "@types/jest": "^29.5.12",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "identity-obj-proxy": "^3.0.0",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "jest-environment-jsdom": "^29.7.0",
+    "storybook": "^8.1.4",
+    "ts-jest": "^29.1.2",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "@testing-library/react": "^14.1.2",

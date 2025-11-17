@@ -13,6 +13,7 @@ SuperKids Learning est une application web d'apprentissage conçue spécifiqueme
 - **Routing**: React Router v6
 - **Build Tool**: Vite
 - **Styling**: Emotion (CSS-in-JS)
+- **Design System**: Storybook (configuration dans `frontend/.storybook`, stories dans `frontend/src/stories`)
 
 ### Backend
 - **Runtime**: Node.js 20+ avec Express.js
@@ -208,6 +209,7 @@ superkids-learning/
 - Tags pour organisation
 - Téléchargement et impression
 - Favoris et collections
+- Pictogrammes optimisés accessibilité (mapping dans `frontend/src/components/accessibility/pictograms.ts`)
 
 **Fichiers concernés**:
 - Frontend: `src/pages/ResourcesPage.tsx`
