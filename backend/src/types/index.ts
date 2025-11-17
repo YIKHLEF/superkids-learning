@@ -88,6 +88,15 @@ export interface ProgressUpdate {
   skillsAcquired?: Record<string, any>;
 }
 
+export interface ActivityRewardPayload {
+  childId: string;
+  activityId: string;
+  tokens?: number;
+  badgeId?: string;
+  themeId?: string;
+  avatarId?: string;
+}
+
 export interface DateRange {
   startDate: Date;
   endDate: Date;

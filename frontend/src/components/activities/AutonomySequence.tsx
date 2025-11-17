@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Checkbox, FormControlLabel, Typography, LinearProgress, Alert } from '@mui/material';
+import { ActivityReward } from '../../types';
 
-const AutonomySequence: React.FC = () => {
+interface AutonomySequenceProps {
+  onSuccess?: (reward: ActivityReward) => void;
+}
+
+const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess }) => {
   const steps = useMemo(
     () => [
       'Ouvrir le sac',
@@ -13,6 +18,7 @@ const AutonomySequence: React.FC = () => {
   );
 
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
 
   const toggleStep = (step: string) => {
     setCompletedSteps((prev) =>
@@ -21,6 +27,18 @@ const AutonomySequence: React.FC = () => {
   };
 
   const progress = Math.round((completedSteps.length / steps.length) * 100);
+
+  useEffect(() => {
+    if (progress === 100 && !finished) {
+      onSuccess?.({
+        activityId: 'autonomy-sequence',
+        tokens: 10,
+        themeId: 'theme_routine',
+        message: 'Routine terminée avec succès !',
+      });
+      setFinished(true);
+    }
+  }, [finished, onSuccess, progress]);
 
   return (
     <Card sx={{ height: '100%' }}>

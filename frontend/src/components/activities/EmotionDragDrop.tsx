@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Card, CardContent, Chip, Typography, Button, Stack, Alert } from '@mui/material';
+import { ActivityReward } from '../../types';
 
 interface EmotionDragDropProps {
   onComplete?: (summary: { matched: number; total: number }) => void;
+  onSuccess?: (reward: ActivityReward) => void;
 }
 
-const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete }) => {
+const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess }) => {
   const emotions = useMemo(
     () => [
       { emoji: '😊', label: 'Joie' },
@@ -18,6 +20,7 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete }) => {
 
   const [matched, setMatched] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>('Fais glisser les émotions vers les bons mots !');
+  const [hasCompleted, setHasCompleted] = useState(false);
 
   const handleMatch = (label: string) => {
     if (!matched.includes(label)) {
@@ -30,6 +33,15 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete }) => {
           : `Encore ${remaining} émotions à associer.`;
       setFeedback(message);
       onComplete?.({ matched: updated.length, total: emotions.length });
+      if (remaining === 0 && !hasCompleted) {
+        onSuccess?.({
+          activityId: 'emotions-dnd',
+          tokens: 20,
+          badgeId: 'badge_empathie',
+          message: 'Tu as débloqué le badge empathie !',
+        });
+        setHasCompleted(true);
+      }
     }
   };
 

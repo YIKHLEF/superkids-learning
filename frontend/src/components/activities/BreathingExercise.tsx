@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, Chip, Stack } from '@mui/material';
+import { ActivityReward } from '../../types';
 
-const BreathingExercise: React.FC = () => {
+interface BreathingExerciseProps {
+  onSuccess?: (reward: ActivityReward) => void;
+}
+
+const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
   const cycles = useMemo(
     () => [
       { label: 'Inspire', duration: 4 },
@@ -13,12 +18,25 @@ const BreathingExercise: React.FC = () => {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [cyclesDone, setCyclesDone] = useState(0);
+  const [celebrated, setCelebrated] = useState(false);
 
   const nextCycle = () => {
     const nextIndex = (activeIndex + 1) % cycles.length;
     setActiveIndex(nextIndex);
     setCyclesDone((prev) => (nextIndex === 0 ? prev + 1 : prev));
   };
+
+  useEffect(() => {
+    if (cyclesDone >= 3 && !celebrated) {
+      onSuccess?.({
+        activityId: 'breathing-exercise',
+        tokens: 12,
+        avatarId: 'avatar_zen',
+        message: 'Respiration maîtrisée, avatar zen débloqué !',
+      });
+      setCelebrated(true);
+    }
+  }, [celebrated, cyclesDone, onSuccess]);
 
   return (
     <Card sx={{ height: '100%' }}>

@@ -12,6 +12,7 @@ export { ProgressService } from './progress.service';
 export { ResourceService } from './resource.service';
 export { MessageService } from './message.service';
 export { AdaptiveService } from './adaptive.service';
+export { RewardService } from './reward.service';
 
 import { PrismaClient } from '@prisma/client';
 import { AuthService } from './auth.service';
@@ -21,6 +22,7 @@ import { ProgressService } from './progress.service';
 import { ResourceService } from './resource.service';
 import { MessageService } from './message.service';
 import { AdaptiveService } from './adaptive.service';
+import { RewardService } from './reward.service';
 
 /**
  * Factory pour créer toutes les instances de services
@@ -36,6 +38,7 @@ export class ServiceFactory {
   private static resourceService: ResourceService;
   private static messageService: MessageService;
   private static adaptiveService: AdaptiveService;
+  private static rewardService: RewardService;
 
   /**
    * Initialiser la factory avec une instance Prisma
@@ -114,6 +117,13 @@ export class ServiceFactory {
     return this.adaptiveService;
   }
 
+  static getRewardService(): RewardService {
+    if (!this.rewardService) {
+      this.rewardService = new RewardService(this.prisma);
+    }
+    return this.rewardService;
+  }
+
   /**
    * Réinitialiser toutes les instances (utile pour les tests)
    */
@@ -125,5 +135,6 @@ export class ServiceFactory {
     this.resourceService = null as any;
     this.messageService = null as any;
     this.adaptiveService = null as any;
+    this.rewardService = null as any;
   }
 }
