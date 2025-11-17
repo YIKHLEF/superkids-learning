@@ -173,6 +173,7 @@ superkids-learning/
 - Frontend: `src/pages/Dashboard.tsx`, `src/store/slices/progressSlice.ts`
 - Backend: `src/controllers/progress.controller.ts`
 - Base de données: `Progress`, `Reward` models
+- Ajouts récents : slice dédié aux récompenses (`src/store/slices/rewardSlice.ts`), service API frontend (`src/services/rewards.service.ts`) et endpoints backend `/api/rewards` pilotés par `reward.service.ts`/`rewards.controller.ts`.
 
 **Nouveautés UX**:
 - Feedback immédiat (jetons/badges) après chaque activité

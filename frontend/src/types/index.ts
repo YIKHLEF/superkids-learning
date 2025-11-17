@@ -102,6 +102,15 @@ export interface Reward {
   unlocked: boolean;
 }
 
+export interface ActivityReward {
+  activityId: string;
+  tokens: number;
+  badgeId?: string;
+  themeId?: string;
+  avatarId?: string;
+  message?: string;
+}
+
 export interface Progress {
   childId: string;
   totalActivitiesCompleted: number;

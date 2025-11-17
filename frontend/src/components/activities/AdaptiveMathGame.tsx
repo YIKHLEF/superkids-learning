@@ -11,19 +11,23 @@ import {
   Alert,
 } from '@mui/material';
 import { DifficultyLevel } from '../../types';
+import { ActivityReward } from '../../types';
 
 interface AdaptiveMathGameProps {
   initialDifficulty?: DifficultyLevel;
   onLevelChange?: (level: DifficultyLevel) => void;
+  onSuccess?: (reward: ActivityReward) => void;
 }
 
 const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
   initialDifficulty = DifficultyLevel.BEGINNER,
   onLevelChange,
+  onSuccess,
 }) => {
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
   const [progress, setProgress] = useState(30);
   const [feedback, setFeedback] = useState('Réponds correctement pour débloquer le niveau supérieur.');
+  const [celebrated, setCelebrated] = useState(false);
 
   const mathPrompts = useMemo(
     () => ({
@@ -52,6 +56,16 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
         ? `Bravo ! Passons au niveau ${nextLevel.toLowerCase()}.`
         : 'On simplifie un peu pour consolider les bases.'
     );
+
+    if (success && newProgress >= 80 && !celebrated) {
+      onSuccess?.({
+        activityId: 'adaptive-math',
+        tokens: 25,
+        badgeId: 'badge_logique',
+        message: 'Progression math réussie !',
+      });
+      setCelebrated(true);
+    }
   };
 
   return (

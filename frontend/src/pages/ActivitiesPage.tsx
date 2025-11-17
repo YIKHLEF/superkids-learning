@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Box, Grid, Button, Typography, Chip, Stack, Tooltip, IconButton } from '@mui/material';
 import {
   EmojiPeople as SocialIcon,
@@ -8,13 +8,18 @@ import {
   Favorite as EmotionalIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { ActivityCategory, DifficultyLevel, AdaptiveContext, SensoryPreference } from '../types';
+import { ActivityReward, ActivityCategory, DifficultyLevel, AdaptiveContext, SensoryPreference } from '../types';
 import EmotionDragDrop from '../components/activities/EmotionDragDrop';
 import CaaBoard from '../components/activities/CaaBoard';
 import AdaptiveMathGame from '../components/activities/AdaptiveMathGame';
 import AutonomySequence from '../components/activities/AutonomySequence';
 import BreathingExercise from '../components/activities/BreathingExercise';
 import useAdaptiveLevel from '../hooks/useAdaptiveLevel';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../store';
+import { applyReward, setError as setRewardError, setInventory, setLoading as setRewardLoading } from '../store/slices/rewardSlice';
+import { addTokens, recordFeedback, unlockReward } from '../store/slices/progressSlice';
+import rewardsService from '../services/rewards.service';
 
 interface ActivityModule {
   id: string;
@@ -23,12 +28,15 @@ interface ActivityModule {
   category: ActivityCategory;
   difficulty: DifficultyLevel;
   duration: number;
-  component: React.ReactNode;
+  renderer: (onSuccess: (reward: ActivityReward) => void) => React.ReactNode;
   badge?: string;
 }
 
 const ActivitiesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory | 'all'>('all');
+  const dispatch = useDispatch<AppDispatch>();
+  const rewardsLoading = useSelector((state: RootState) => state.rewards.loading);
+  const childId = 'demo-child-01';
 
   const adaptiveContext = useMemo<AdaptiveContext>(() => {
     const category = selectedCategory === 'all' ? ActivityCategory.SOCIAL_SKILLS : selectedCategory;
@@ -63,6 +71,51 @@ const ActivitiesPage: React.FC = () => {
 
   const { recommendation, loading, error, source, refresh, applyRecommendation } = useAdaptiveLevel(adaptiveContext);
 
+  useEffect(() => {
+    const fetchRewards = async () => {
+      dispatch(setRewardLoading(true));
+      try {
+        const { tokens, rewards } = await rewardsService.getRewards(childId);
+        dispatch(setInventory({ tokens, rewards }));
+      } catch (err) {
+        dispatch(setRewardError('Impossible de charger les récompenses'));
+      } finally {
+        dispatch(setRewardLoading(false));
+      }
+    };
+
+    fetchRewards();
+  }, [childId, dispatch]);
+
+  const handleActivityReward = useCallback(
+    async (reward: ActivityReward, module: ActivityModule & { suggestedDifficulty?: DifficultyLevel }) => {
+      dispatch(applyReward(reward));
+      dispatch(addTokens(reward.tokens));
+      if (reward.badgeId) {
+        dispatch(unlockReward(reward.badgeId));
+      }
+      dispatch(
+        recordFeedback({
+          message: reward.message || `Bravo pour ${module.title}!`,
+          tokens: reward.tokens,
+          badgeUnlocked: reward.badgeId,
+          recommendedDifficulty: module.suggestedDifficulty || module.difficulty,
+        })
+      );
+
+      try {
+        dispatch(setRewardLoading(true));
+        const data = await rewardsService.awardForActivity(childId, reward);
+        dispatch(setInventory({ tokens: data.balance, rewards: data.rewards }));
+      } catch (err) {
+        dispatch(setRewardError('Synchronisation des récompenses impossible'));
+      } finally {
+        dispatch(setRewardLoading(false));
+      }
+    },
+    [childId, dispatch]
+  );
+
   const categories = [
     { value: 'all', label: 'Toutes', icon: null },
     { value: ActivityCategory.SOCIAL_SKILLS, label: 'Social', icon: <SocialIcon /> },
@@ -81,7 +134,7 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.EMOTIONAL_REGULATION,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 8,
-        component: <EmotionDragDrop />,
+        renderer: (onSuccess) => <EmotionDragDrop onSuccess={onSuccess} />,
         badge: 'Empathie',
       },
       {
@@ -91,7 +144,7 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.COMMUNICATION,
         difficulty: DifficultyLevel.INTERMEDIATE,
         duration: 6,
-        component: <CaaBoard />,
+        renderer: (onSuccess) => <CaaBoard onSuccess={onSuccess} />,
         badge: 'Communicateur',
       },
       {
@@ -101,7 +154,7 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.ACADEMIC,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 12,
-        component: <AdaptiveMathGame />,
+        renderer: (onSuccess) => <AdaptiveMathGame onSuccess={onSuccess} />,
         badge: 'Logique',
       },
       {
@@ -111,7 +164,7 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.AUTONOMY,
         difficulty: DifficultyLevel.BEGINNER,
         duration: 7,
-        component: <AutonomySequence />,
+        renderer: (onSuccess) => <AutonomySequence onSuccess={onSuccess} />,
         badge: 'Autonome',
       },
       {
@@ -121,7 +174,7 @@ const ActivitiesPage: React.FC = () => {
         category: ActivityCategory.EMOTIONAL_REGULATION,
         difficulty: DifficultyLevel.INTERMEDIATE,
         duration: 5,
-        component: <BreathingExercise />,
+        renderer: (onSuccess) => <BreathingExercise onSuccess={onSuccess} />,
         badge: 'Zen',
       },
     ],
@@ -212,7 +265,7 @@ const ActivitiesPage: React.FC = () => {
         </Stack>
         <Tooltip title="Rafraîchir la recommandation">
           <span>
-            <IconButton onClick={refresh} disabled={loading} color="primary">
+            <IconButton onClick={refresh} disabled={loading || rewardsLoading} color="primary">
               <RefreshIcon />
             </IconButton>
           </span>
@@ -268,7 +321,9 @@ const ActivitiesPage: React.FC = () => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {module.description}
               </Typography>
-              {module.component}
+              {module.renderer((reward) =>
+                handleActivityReward(reward, module as ActivityModule & { suggestedDifficulty?: DifficultyLevel })
+              )}
             </Box>
           </Grid>
         ))}

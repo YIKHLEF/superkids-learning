@@ -4,6 +4,7 @@ import profileReducer from './slices/profileSlice';
 import activityReducer from './slices/activitySlice';
 import progressReducer from './slices/progressSlice';
 import settingsReducer from './slices/settingsSlice';
+import rewardReducer from './slices/rewardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     activity: activityReducer,
     progress: progressReducer,
     settings: settingsReducer,
+    rewards: rewardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

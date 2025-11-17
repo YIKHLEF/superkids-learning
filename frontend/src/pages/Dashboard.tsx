@@ -26,6 +26,7 @@ const Dashboard: React.FC = () => {
   const progress = useSelector((state: RootState) => state.progress.progress);
   const lastFeedback = useSelector((state: RootState) => state.progress.lastFeedback);
   const progression = useSelector((state: RootState) => state.progress.progression);
+  const rewards = useSelector((state: RootState) => state.rewards);
 
   const tokensToNextBadge = Math.max(0, 100 - (progress?.tokensEarned || 0));
 
@@ -33,7 +34,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <TrophyIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
       label: 'Jetons gagnés',
-      value: progress?.tokensEarned || 0,
+      value: progress?.tokensEarned || rewards.tokens,
     },
     {
       icon: <TrendingIcon sx={{ fontSize: 40, color: 'success.main' }} />,
@@ -172,19 +173,29 @@ const Dashboard: React.FC = () => {
                 Dernières récompenses
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {['🏆', '⭐', '🎨', '📚', '🎭'].map((emoji, index) => (
-                  <Avatar
-                    key={index}
-                    sx={{
-                      width: 50,
-                      height: 50,
-                      backgroundColor: 'secondary.light',
-                      fontSize: '1.5rem',
-                    }}
-                  >
-                    {emoji}
-                  </Avatar>
-                ))}
+                {rewards.badges.filter((badge) => badge.unlocked).length === 0 ? (
+                  <Alert severity="info" sx={{ width: '100%' }}>
+                    Complète une activité pour débloquer ton premier badge !
+                  </Alert>
+                ) : (
+                  rewards.badges
+                    .filter((badge) => badge.unlocked)
+                    .slice(0, 5)
+                    .map((badge) => (
+                      <Avatar
+                        key={badge.id}
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          backgroundColor: 'secondary.light',
+                          fontSize: '0.85rem',
+                          color: 'secondary.dark',
+                        }}
+                      >
+                        {badge.name.slice(0, 2).toUpperCase()}
+                      </Avatar>
+                    ))
+                )}
               </Box>
             </CardContent>
           </Card>

@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Card, CardContent, Chip, Typography, Stack, Alert, Button } from '@mui/material';
+import { ActivityReward } from '../../types';
 
 interface CaaBoardProps {
   onMessageBuilt?: (message: string) => void;
+  onSuccess?: (reward: ActivityReward) => void;
 }
 
-const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt }) => {
+const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
   const tiles = useMemo(
     () => [
       { icon: '🧑‍🤝‍🧑', label: 'Je veux' },
@@ -19,11 +21,22 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt }) => {
   );
 
   const [sentence, setSentence] = useState<string[]>(['Je veux']);
+  const [celebrated, setCelebrated] = useState(false);
 
   const addTile = (label: string) => {
     const updated = [...sentence, label];
     setSentence(updated);
     onMessageBuilt?.(updated.join(' '));
+
+    if (updated.length >= 4 && !celebrated) {
+      onSuccess?.({
+        activityId: 'aac-board',
+        tokens: 15,
+        badgeId: 'badge_communicateur',
+        message: 'Message complet envoyé !',
+      });
+      setCelebrated(true);
+    }
   };
 
   const reset = () => setSentence(['Je veux']);
