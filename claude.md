@@ -3148,9 +3148,14 @@ Propriétaire - Tous droits réservés
   - **Upload sécurisé**: Multer en mémoire, filtrage MIME/taille configurable, compression Sharp → WebP
   - **Stockage multi-cloud**: client unifié S3 / Azure Blob / local (chemins cohérents, métadonnées largeur/hauteur)
   - **API & Front**: endpoints avatar/ressource exposés, services persistants, formulaires accessibles avec validations côté client + tests UI
-- 🚧 **Phase 3.6**: Pipeline CI/CD
+- ✅ **Phase 3.6**: Pipeline CI/CD & Opérations - **COMPLÉTÉ** 🚀
+  - **CI GitHub Actions**: workflow `ci.yml` pour lint + tests + build backend/frontend + audit sécurité npm
+  - **CD Staging**: workflow `deploy.yml` qui build/push les images Docker backend/frontend vers un registry (secrets REGISTRY_* / IMAGE_NAME)
+  - **Monitoring**: middleware Prometheus `/metrics`, stack `docker-compose.monitoring.yml` (Prometheus, Grafana, Node Exporter) + scrape config `monitoring/prometheus.yml`
+  - **Logging**: transport Winston HTTP optionnel vers ELK/OpenSearch (env `ELK_HTTP_ENDPOINT` / `ELASTIC_INGEST_URL` + auth basique)
+  - **Backups**: script `scripts/backup-db.sh` (pg_dump compressé + upload S3 optionnel, rétention configurable)
 - 🚧 **Phase 3.9**: Activités Interactives Spécifiques
 
-**Dernière mise à jour**: 17 Novembre 2025
+**Dernière mise à jour**: 18 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
-**Statut**: Phases 3.1-3.4, 3.7 & 3.8 complétées - Sécurité + Performance Production-Ready !
+**Statut**: Phases 3.1-3.4, 3.6-3.8 complétées - Sécurité + Performance + CI/CD/Monitoring prêts prod !
