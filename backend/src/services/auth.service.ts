@@ -134,7 +134,7 @@ export class AuthService {
   /**
    * Obtenir l'utilisateur actuel depuis le token
    */
-  async getCurrentUser(userId: string): Promise<User | null> {
+  async getCurrentUser(userId: string): Promise<Omit<User, 'password'> | null> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -242,8 +242,10 @@ export class AuthService {
    * Générer un token JWT
    */
   private generateToken(userId: string): string {
-    return jwt.sign({ userId }, this.jwtSecret, {
-      expiresIn: this.jwtExpiresIn,
-    });
+    return (jwt as any).sign(
+      { userId },
+      this.jwtSecret as jwt.Secret,
+      { expiresIn: this.jwtExpiresIn }
+    ) as string;
   }
 }

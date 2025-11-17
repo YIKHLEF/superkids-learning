@@ -37,14 +37,15 @@ export async function createTestUser(
 
 // Create a test child profile
 export async function createTestChildProfile(
-  app: Express,
-  token: string,
+  _app: Express,
+  _token: string,
   userId: string
 ): Promise<any> {
   const profile = await prisma.childProfile.create({
     data: {
       userId,
       dateOfBirth: new Date('2018-05-15'),
+      age: 6,
       avatarUrl: 'https://example.com/avatar.jpg',
       sensoryPreferences: ['LOW_STIMULATION'],
       developmentLevel: 'Intermédiaire',
@@ -63,10 +64,10 @@ export async function createTestChildProfile(
       childId: profile.id,
       totalActivitiesCompleted: 0,
       tokensEarned: 0,
+      skillsAcquired: {},
       currentStreak: 0,
       longestStreak: 0,
       rewardsUnlocked: [],
-      categoryProgress: {},
     },
   });
 
@@ -81,11 +82,11 @@ export async function createTestActivity(): Promise<any> {
       description: 'Identifier les émotions de base',
       category: 'SOCIAL_SKILLS',
       difficulty: 'BEGINNER',
-      estimatedDuration: 15,
-      targetAge: [5, 6, 7],
+      duration: 15,
+      thumbnailUrl: null,
+      videoUrl: null,
+      instructions: ['Observer les visages et identifier les émotions'],
       targetSkills: ['Reconnaissance émotionnelle', 'Empathie'],
-      instructions: 'Observer les visages et identifier les émotions',
-      materials: ['Cartes émotions'],
     },
   });
 }
@@ -100,9 +101,6 @@ export async function createTestResource(): Promise<any> {
       url: 'https://example.com/video.mp4',
       category: 'Émotions',
       tags: ['émotions', 'vidéo', 'enfants'],
-      duration: 300,
-      language: 'fr',
-      ageRange: [5, 10],
     },
   });
 }

@@ -158,6 +158,23 @@ npm run dev
 
 Le backend sera accessible sur `http://localhost:5000`
 
+### Configuration du stockage et de l'upload
+
+Ajoutez les variables suivantes dans `backend/.env` pour activer l'upload sécurisé vers S3 ou Azure (mode `local` par défaut) :
+
+```
+STORAGE_PROVIDER=local # ou s3 / azure
+STORAGE_BUCKET=superkids-uploads
+STORAGE_REGION=eu-west-1
+STORAGE_ACCESS_KEY_ID=xxx
+STORAGE_SECRET_ACCESS_KEY=xxx
+AZURE_STORAGE_CONNECTION_STRING=xxx
+MAX_UPLOAD_SIZE=5242880
+ALLOWED_UPLOAD_MIME_TYPES=image/jpeg,image/png,image/webp,application/pdf,video/mp4,video/webm
+```
+
+Les images sont compressées avec Sharp avant l'envoi pour réduire la bande passante.
+
 ## 🚀 Utilisation
 
 ### Démarrage Rapide
