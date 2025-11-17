@@ -68,6 +68,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_CDN_URL: ${VITE_CDN_URL:-/}
     container_name: superkids-frontend
     restart: unless-stopped
     ports:

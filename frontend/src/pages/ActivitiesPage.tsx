@@ -4,12 +4,9 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   Typography,
   Button,
   Chip,
-  ToggleButtonGroup,
-  ToggleButton,
 } from '@mui/material';
 import { ActivityCategory, DifficultyLevel } from '../types';
 import {

@@ -6,6 +6,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# CDN base path for assets (overridable at build time)
+ARG VITE_CDN_URL=/
+ENV VITE_CDN_URL=${VITE_CDN_URL}
+
 # Install dependencies
 RUN npm ci
 

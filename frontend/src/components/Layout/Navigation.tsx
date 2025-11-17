@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import {
   Home as HomeIcon,
-  Dashboard as DashboardIcon,
   Extension as ActivitiesIcon,
   Person as ProfileIcon,
   Analytics as AnalyticsIcon,
