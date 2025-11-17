@@ -1,4 +1,7 @@
 import { Request, Response } from 'express';
+import { ActivityEventPayload } from '../types';
+
+const inMemoryEvents: ActivityEventPayload[] = [];
 
 export const getProgress = async (req: Request, res: Response) => {
   const { childId } = req.params;
@@ -21,6 +24,10 @@ export const getProgress = async (req: Request, res: Response) => {
         longestStreak: 12,
         lastActivityDate: new Date(),
         rewardsUnlocked: ['reward-1', 'reward-2'],
+        totalDurationSeconds: 3600,
+        totalAttempts: 42,
+        averageSuccessRate: 0.87,
+        dominantEmotionalState: 'calm',
       },
     },
   });
@@ -70,6 +77,56 @@ export const unlockReward = async (req: Request, res: Response) => {
       reward: {
         id: rewardId,
         unlocked: true,
+      },
+    },
+  });
+};
+
+export const recordProgressEvent = async (req: Request, res: Response) => {
+  const event = req.body as ActivityEventPayload;
+  inMemoryEvents.push(event);
+
+  res.json({
+    status: 'success',
+    data: { event },
+  });
+};
+
+export const listProgressEvents = async (req: Request, res: Response) => {
+  const { childId } = req.query;
+  const filtered = childId
+    ? inMemoryEvents.filter((event) => event.childId === childId)
+    : inMemoryEvents;
+
+  const totalDurationSeconds = filtered.reduce(
+    (acc, event) => acc + (event.durationSeconds || 0),
+    0
+  );
+  const attempts = filtered.reduce((acc, event) => acc + (event.attempts || 0), 0);
+  const emotionalStates = filtered.reduce<Record<string, number>>((map, event) => {
+    if (event.emotionalState) {
+      map[event.emotionalState] = (map[event.emotionalState] || 0) + 1;
+    }
+    return map;
+  }, {});
+
+  const successEvents = filtered.filter((event) => event.type === 'success');
+  const averageSuccessRate = successEvents.length
+    ?
+        successEvents.reduce((acc, event) => acc + (event.successRate ?? 1), 0) /
+      successEvents.length
+    : 0;
+
+  res.json({
+    status: 'success',
+    data: {
+      events: filtered,
+      aggregates: {
+        totalActivities: filtered.filter((e) => e.type === 'activity_start').length,
+        averageSuccessRate,
+        totalDurationSeconds,
+        emotionalStates,
+        attempts,
       },
     },
   });

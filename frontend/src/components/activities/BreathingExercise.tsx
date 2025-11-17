@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, Chip, Stack } from '@mui/material';
-import { ActivityReward } from '../../types';
+import { ActivityReward, DifficultyLevel } from '../../types';
+import analyticsService from '../../services/analytics.service';
 
 interface BreathingExerciseProps {
   onSuccess?: (reward: ActivityReward) => void;
 }
 
 const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
+  const childId = 'demo-child';
+  const difficulty = DifficultyLevel.BEGINNER;
   const cycles = useMemo(
     () => [
       { label: 'Inspire', duration: 4 },
@@ -20,10 +23,29 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
   const [cyclesDone, setCyclesDone] = useState(0);
   const [celebrated, setCelebrated] = useState(false);
 
+  useEffect(() => {
+    analyticsService.sendEvent({
+      activityId: 'breathing-exercise',
+      childId,
+      type: 'activity_start',
+      timestamp: new Date().toISOString(),
+      difficulty,
+    });
+  }, [childId, difficulty]);
+
   const nextCycle = () => {
     const nextIndex = (activeIndex + 1) % cycles.length;
     setActiveIndex(nextIndex);
     setCyclesDone((prev) => (nextIndex === 0 ? prev + 1 : prev));
+    analyticsService.sendEvent({
+      activityId: 'breathing-exercise',
+      childId,
+      type: 'attempt',
+      timestamp: new Date().toISOString(),
+      difficulty,
+      attempts: cyclesDone + 1,
+      emotionalState: 'calm',
+    });
   };
 
   useEffect(() => {
@@ -33,6 +55,16 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess }) => {
         tokens: 12,
         avatarId: 'avatar_zen',
         message: 'Respiration maîtrisée, avatar zen débloqué !',
+      });
+      analyticsService.sendEvent({
+        activityId: 'breathing-exercise',
+        childId,
+        type: 'success',
+        timestamp: new Date().toISOString(),
+        difficulty,
+        attempts: cyclesDone,
+        successRate: 1,
+        emotionalState: 'calm',
       });
       setCelebrated(true);
     }

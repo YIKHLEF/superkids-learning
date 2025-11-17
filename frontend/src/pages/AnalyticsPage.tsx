@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Grid,
@@ -9,52 +9,94 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
 } from '@mui/material';
+import { Line, Bar, Radar } from 'react-chartjs-2';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip as ChartTooltip,
   Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-} from 'recharts';
+  RadialLinearScale,
+} from 'chart.js';
+import analyticsService, { AnalyticsSummary } from '../services/analytics.service';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  ChartTooltip,
+  Legend,
+  RadialLinearScale
+);
 
 const AnalyticsPage: React.FC = () => {
-  const [period, setPeriod] = React.useState('week');
+  const [period, setPeriod] = useState('week');
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const childId = 'demo-child';
 
-  const weeklyData = [
-    { day: 'Lun', activites: 3, reussite: 85 },
-    { day: 'Mar', activites: 4, reussite: 90 },
-    { day: 'Mer', activites: 2, reussite: 75 },
-    { day: 'Jeu', activites: 5, reussite: 95 },
-    { day: 'Ven', activites: 3, reussite: 88 },
-    { day: 'Sam', activites: 4, reussite: 92 },
-    { day: 'Dim', activites: 2, reussite: 80 },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await analyticsService.getEvents(childId);
+      setAnalytics(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, [childId]);
 
-  const skillsData = [
-    { competence: 'Social', niveau: 85 },
-    { competence: 'Communication', niveau: 78 },
-    { competence: 'Académique', niveau: 92 },
-    { competence: 'Autonomie', niveau: 70 },
-    { competence: 'Émotions', niveau: 88 },
-  ];
+  const lineData = useMemo(
+    () => ({
+      labels: analytics?.events.map((event) => new Date(event.timestamp).toLocaleTimeString()) || [],
+      datasets: [
+        {
+          label: 'Taux de réussite',
+          data: analytics?.events.map((event) => (event.successRate ?? 0) * 100) || [],
+          borderColor: '#A8D5E2',
+          backgroundColor: 'rgba(168, 213, 226, 0.4)',
+        },
+      ],
+    }),
+    [analytics]
+  );
 
-  const emotionalData = [
-    { emotion: 'Heureux', count: 45 },
-    { emotion: 'Neutre', count: 30 },
-    { emotion: 'Frustré', count: 15 },
-    { emotion: 'Anxieux', count: 10 },
-  ];
+  const barData = useMemo(
+    () => ({
+      labels: Object.keys(analytics?.aggregates.emotionalStates || {}),
+      datasets: [
+        {
+          label: 'Émotions détectées',
+          data: Object.values(analytics?.aggregates.emotionalStates || {}),
+          backgroundColor: '#B8E6D5',
+        },
+      ],
+    }),
+    [analytics]
+  );
+
+  const radarData = useMemo(
+    () => ({
+      labels: ['Social', 'Communication', 'Académique', 'Autonomie', 'Émotions'],
+      datasets: [
+        {
+          label: 'Compétences',
+          data: [85, 78, 92, 70, 88],
+          backgroundColor: 'rgba(168, 213, 226, 0.4)',
+          borderColor: '#A8D5E2',
+        },
+      ],
+    }),
+    []
+  );
 
   return (
     <Box>
@@ -90,32 +132,13 @@ const AnalyticsPage: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                 Activités et taux de réussite
               </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={weeklyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="activites"
-                    stroke="#A8D5E2"
-                    strokeWidth={3}
-                    name="Activités complétées"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="reussite"
-                    stroke="#B8E6D5"
-                    strokeWidth={3}
-                    name="Taux de réussite (%)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {loading || !analytics ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Line data={lineData} />
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -127,15 +150,13 @@ const AnalyticsPage: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                 États émotionnels
               </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={emotionalData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="emotion" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#B8E6D5" name="Occurrences" />
-                </BarChart>
-              </ResponsiveContainer>
+              {loading || !analytics ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Bar data={barData} />
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -147,21 +168,7 @@ const AnalyticsPage: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                 Niveau de compétences
               </Typography>
-              <ResponsiveContainer width="100%" height={350}>
-                <RadarChart data={skillsData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="competence" />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                  <Radar
-                    name="Niveau"
-                    dataKey="niveau"
-                    stroke="#A8D5E2"
-                    fill="#A8D5E2"
-                    fillOpacity={0.6}
-                  />
-                  <Tooltip />
-                </RadarChart>
-              </ResponsiveContainer>
+              <Radar data={radarData} />
             </CardContent>
           </Card>
         </Grid>
@@ -236,7 +243,7 @@ const AnalyticsPage: React.FC = () => {
                 <Grid item xs={6} md={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h3" color="primary.main" sx={{ fontWeight: 700 }}>
-                      23
+                      {analytics?.aggregates.totalActivities ?? 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Activités complétées
@@ -246,7 +253,7 @@ const AnalyticsPage: React.FC = () => {
                 <Grid item xs={6} md={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h3" color="success.main" sx={{ fontWeight: 700 }}>
-                      87%
+                      {Math.round((analytics?.aggregates.averageSuccessRate || 0) * 100)}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Taux de réussite moyen
@@ -256,7 +263,7 @@ const AnalyticsPage: React.FC = () => {
                 <Grid item xs={6} md={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h3" color="warning.main" sx={{ fontWeight: 700 }}>
-                      3h45
+                      {Math.round((analytics?.aggregates.totalDurationSeconds || 0) / 60)}m
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Temps d'apprentissage

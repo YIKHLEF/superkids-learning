@@ -90,6 +90,7 @@ export interface ActivitySession {
   supportLevel: 'none' | 'minimal' | 'moderate' | 'full';
   emotionalState?: 'happy' | 'neutral' | 'frustrated' | 'anxious';
   notes?: string;
+  durationSeconds?: number;
 }
 
 export interface Reward {
@@ -120,6 +121,10 @@ export interface Progress {
   longestStreak: number;
   lastActivityDate?: Date;
   rewardsUnlocked: string[];
+  totalDurationSeconds?: number;
+  totalAttempts?: number;
+  averageSuccessRate?: number;
+  dominantEmotionalState?: string;
 }
 
 export interface Message {
