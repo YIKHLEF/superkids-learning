@@ -18,12 +18,14 @@ interface AdaptiveMathGameProps {
   initialDifficulty?: DifficultyLevel;
   onLevelChange?: (level: DifficultyLevel) => void;
   onSuccess?: (reward: ActivityReward) => void;
+  metadata?: { ebpTags?: string[]; instructions?: string[] };
 }
 
 const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
   initialDifficulty = DifficultyLevel.BEGINNER,
   onLevelChange,
   onSuccess,
+  metadata,
 }) => {
   const childId = 'demo-child';
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
@@ -99,9 +101,25 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
           </Typography>
           <Chip label={difficulty} color="primary" size="small" />
         </Stack>
+        {metadata?.ebpTags && metadata.ebpTags.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            {metadata.ebpTags.map((tag) => (
+              <Chip key={tag} label={`EBP: ${tag}`} color="info" size="small" variant="outlined" />
+            ))}
+          </Stack>
+        )}
         <Alert severity="info" sx={{ mb: 2 }}>
           {feedback}
         </Alert>
+        {metadata?.instructions && metadata.instructions.length > 0 && (
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+            {metadata.instructions.map((instruction) => (
+              <Typography key={instruction} component="li" variant="body2" color="text.secondary">
+                {instruction}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
           {mathPrompts[difficulty]}
         </Typography>

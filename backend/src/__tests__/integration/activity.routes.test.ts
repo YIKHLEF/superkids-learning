@@ -102,6 +102,32 @@ describe('Activity Routes Integration Tests', () => {
       expect(response.body.data.every((a: any) => a.difficulty === 'BEGINNER')).toBe(true);
     });
 
+    it('should filter activities by ebp tag', async () => {
+      await prisma.activity.create({
+        data: {
+          title: 'Narration sociale',
+          description: 'Histoires guidées pour préparer les transitions',
+          category: 'SOCIAL_SKILLS',
+          difficulty: 'BEGINNER',
+          duration: 8,
+          instructions: ['Lire l\'histoire', 'Répondre aux questions'],
+          targetSkills: ['anticipation'],
+          ebpTags: ['Social Narratives'],
+        },
+      });
+
+      const response = await request(app)
+        .get('/api/activities?ebp=Social Narratives')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ebpTags: expect.arrayContaining(['Social Narratives']) }),
+        ])
+      );
+    });
+
     it('should fail without authentication', async () => {
       await request(app).get('/api/activities').expect(401);
     });

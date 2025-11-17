@@ -33,6 +33,11 @@ const router = Router();
  *           type: string
  *           enum: [BEGINNER, INTERMEDIATE, ADVANCED]
  *         description: Filtrer par niveau de difficulté
+ *       - in: query
+ *         name: ebp
+ *         schema:
+ *           type: string
+ *         description: Filtrer par pratique basée sur les preuves (EBP)
  *     responses:
  *       200:
  *         description: Liste des activités

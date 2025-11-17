@@ -6,9 +6,10 @@ import analyticsService from '../../services/analytics.service';
 interface CaaBoardProps {
   onMessageBuilt?: (message: string) => void;
   onSuccess?: (reward: ActivityReward) => void;
+  metadata?: { ebpTags?: string[]; instructions?: string[] };
 }
 
-const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
+const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess, metadata }) => {
   const childId = 'demo-child';
   const difficulty = DifficultyLevel.BEGINNER;
   const tiles = useMemo(
@@ -78,9 +79,25 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Tableau CAA
         </Typography>
+        {metadata?.ebpTags && metadata.ebpTags.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            {metadata.ebpTags.map((tag) => (
+              <Chip key={tag} label={`EBP: ${tag}`} color="info" size="small" variant="outlined" />
+            ))}
+          </Stack>
+        )}
         <Alert severity="info" sx={{ mb: 2 }}>
           Construis une phrase en appuyant sur les pictogrammes.
         </Alert>
+        {metadata?.instructions && metadata.instructions.length > 0 && (
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, mb: 2 }}>
+            {metadata.instructions.map((instruction) => (
+              <Typography key={instruction} component="li" variant="body2" color="text.secondary">
+                {instruction}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 2 }}>
           {tiles.map((tile) => (
             <Chip

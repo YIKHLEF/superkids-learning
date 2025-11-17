@@ -71,6 +71,7 @@ export class ActivityService {
         where: {
           ...(filters?.category && { category: filters.category }),
           ...(filters?.difficulty && { difficulty: filters.difficulty }),
+          ...(filters?.ebpTag && { ebpTags: { has: filters.ebpTag } }),
           ...(filters?.search && {
             OR: [
               { title: { contains: filters.search, mode: 'insensitive' } },
@@ -150,6 +151,7 @@ export class ActivityService {
           videoUrl: data.videoUrl,
           instructions: data.instructions,
           targetSkills: data.targetSkills,
+          ebpTags: data.ebpTags || [],
         },
       });
 

@@ -146,6 +146,7 @@ superkids-learning/
 - Jeux mathématiques adaptatifs (difficulté dynamique)
 - Séquences d'autonomie (checklist guidée)
 - Exercices de respiration (rituel 4-2-4)
+- Catalogue d'activités annoté avec des tags EBP (Evidence-Based Practices) filtrables côté frontend et exposés via l'API `/api/activities`.
 
 ## Moteur Adaptatif (nouveau)
 - Backend : `backend/src/services/adaptive.service.ts` expose une API interne d'« Adaptive Engine » combinant heuristique explicable et connecteur ML optionnel (configurable via `ADAPTIVE_ML_ENABLED`, `ADAPTIVE_ML_ENDPOINT`, `ADAPTIVE_ML_API_KEY`).
