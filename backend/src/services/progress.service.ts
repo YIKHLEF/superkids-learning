@@ -1,5 +1,5 @@
-import { PrismaClient, Progress, Reward } from '@prisma/client';
-import { ProgressUpdate, DateRange, AnalyticsData, AppError } from '../types';
+import { ActivitySession, DifficultyLevel, PrismaClient, Progress, Reward } from '@prisma/client';
+import { ProgressUpdate, DateRange, AnalyticsData, AppError, ActivityEventPayload } from '../types';
 import { logger } from '../utils/logger';
 
 export class ProgressService {
@@ -7,6 +7,152 @@ export class ProgressService {
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+  }
+
+  async recordProgressEvent(event: ActivityEventPayload) {
+    try {
+      await this.upsertSessionFromEvent(event);
+      return this.getProgressAnalytics(event.childId);
+    } catch (error) {
+      logger.error("Erreur lors de l'enregistrement de l'événement de progrès:", error);
+      throw new AppError("Impossible d'enregistrer l'événement", 500);
+    }
+  }
+
+  async getProgressAnalytics(childId?: string) {
+    const sessions = await this.prisma.activitySession.findMany({
+      where: childId ? { childId } : {},
+      include: {
+        activity: {
+          select: { category: true, difficulty: true, title: true, id: true },
+        },
+      },
+      orderBy: { startTime: 'desc' },
+      take: 200,
+    });
+
+    const aggregates = this.buildAnalyticsAggregates(sessions);
+    const events = sessions.map((session) => ({
+      activityId: session.activityId,
+      childId: session.childId,
+      type: session.completed ? 'success' : 'activity_start',
+      timestamp: (session.endTime || session.startTime).toISOString(),
+      difficulty: session.activity?.difficulty || DifficultyLevel.BEGINNER,
+      attempts: session.attempts,
+      successRate: session.successRate,
+      emotionalState: session.emotionalState || undefined,
+      dominantEmotion: session.dominantEmotion || undefined,
+      durationSeconds: session.duration || session.durationSeconds,
+      supportLevel: session.supportLevel,
+      metadata: {
+        category: session.activity?.category,
+        title: session.activity?.title,
+      },
+    }));
+
+    return { events, aggregates };
+  }
+
+  private async upsertSessionFromEvent(event: ActivityEventPayload): Promise<ActivitySession> {
+    const { childId, activityId, timestamp } = event;
+    const attemptsDelta = event.attempts ?? 0;
+    const durationDelta = event.durationSeconds ?? 0;
+
+    const existingSession = await this.prisma.activitySession.findFirst({
+      where: { childId, activityId, completed: false },
+      orderBy: { startTime: 'desc' },
+    });
+
+    if (!existingSession || event.type === 'activity_start') {
+      return this.prisma.activitySession.create({
+        data: {
+          childId,
+          activityId,
+          startTime: new Date(timestamp),
+          attempts: attemptsDelta,
+          attemptsCount: attemptsDelta,
+          duration: durationDelta,
+          durationSeconds: durationDelta,
+          supportLevel: event.supportLevel || 'none',
+          emotionalState: event.emotionalState,
+          dominantEmotion: event.dominantEmotion || event.emotionalState,
+          successRate: event.successRate ?? 0,
+          completed: event.type === 'success' || event.type === 'activity_end',
+          endTime:
+            event.type === 'success' || event.type === 'activity_end'
+              ? new Date(timestamp)
+              : undefined,
+        },
+      });
+    }
+
+    const shouldComplete = event.type === 'success' || event.type === 'activity_end';
+
+    return this.prisma.activitySession.update({
+      where: { id: existingSession.id },
+      data: {
+        attempts: existingSession.attempts + attemptsDelta,
+        attemptsCount: existingSession.attemptsCount + attemptsDelta,
+        duration: existingSession.duration + durationDelta,
+        durationSeconds: existingSession.durationSeconds + durationDelta,
+        successRate: event.successRate ?? existingSession.successRate,
+        supportLevel: event.supportLevel || existingSession.supportLevel,
+        emotionalState: event.emotionalState || existingSession.emotionalState,
+        dominantEmotion: event.dominantEmotion || existingSession.dominantEmotion,
+        completed: shouldComplete ? true : existingSession.completed,
+        endTime: shouldComplete ? new Date(timestamp) : existingSession.endTime,
+      },
+    });
+  }
+
+  private buildAnalyticsAggregates(sessions: ActivitySession[]) {
+    const emotionalStates: Record<string, number> = {};
+    const skillAverages: Record<string, number> = {};
+    const skillCounts: Record<string, number> = {};
+
+    let totalDurationSeconds = 0;
+    let totalAttempts = 0;
+    let completedSessions = 0;
+    let successAccumulator = 0;
+
+    sessions.forEach((session) => {
+      totalDurationSeconds += session.duration || session.durationSeconds;
+      totalAttempts += session.attempts || session.attemptsCount;
+
+      if (session.completed) {
+        completedSessions += 1;
+        successAccumulator += session.successRate;
+      }
+
+      const emotion = session.dominantEmotion || session.emotionalState;
+      if (emotion) {
+        emotionalStates[emotion] = (emotionalStates[emotion] || 0) + 1;
+      }
+
+      const category = (session as any).activity?.category as string | undefined;
+      if (category) {
+        skillCounts[category] = (skillCounts[category] || 0) + 1;
+        skillAverages[category] =
+          (skillAverages[category] || 0) + (session.successRate || 0);
+      }
+    });
+
+    Object.keys(skillAverages).forEach((key) => {
+      skillAverages[key] = skillAverages[key] / (skillCounts[key] || 1);
+    });
+
+    const averageSuccessRate = completedSessions
+      ? successAccumulator / completedSessions
+      : 0;
+
+    return {
+      totalActivities: completedSessions,
+      averageSuccessRate,
+      totalDurationSeconds,
+      emotionalStates,
+      attempts: totalAttempts,
+      skillAverages,
+    };
   }
 
   /**

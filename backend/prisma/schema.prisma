@@ -121,8 +121,11 @@ model ActivitySession {
   completed         Boolean     @default(false)
   successRate       Float       @default(0)
   attemptsCount     Int         @default(0)
+  attempts          Int         @default(0)
+  duration          Int         @default(0)
   supportLevel      String      @default("none") // none, minimal, moderate, full
   emotionalState    String?     // happy, neutral, frustrated, anxious
+  dominantEmotion   String?
   notes             String?
   durationSeconds   Int         @default(0)
 

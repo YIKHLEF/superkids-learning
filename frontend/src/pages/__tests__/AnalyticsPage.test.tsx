@@ -17,6 +17,10 @@ describe('AnalyticsPage', () => {
           type: 'activity_start',
           timestamp: new Date().toISOString(),
           difficulty: 'BEGINNER',
+          durationSeconds: 120,
+          successRate: 0.5,
+          attempts: 2,
+          dominantEmotion: 'calm',
         },
       ],
       aggregates: {
@@ -25,6 +29,7 @@ describe('AnalyticsPage', () => {
         totalDurationSeconds: 120,
         emotionalStates: { calm: 2 },
         attempts: 2,
+        skillAverages: { SOCIAL_SKILLS: 0.7 },
       },
     });
   });
@@ -35,6 +40,7 @@ describe('AnalyticsPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/Activités complétées/i)).toBeInTheDocument();
       expect(screen.getByText(/Taux de réussite moyen/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tentatives enregistrées/i)).toBeInTheDocument();
     });
   });
 });

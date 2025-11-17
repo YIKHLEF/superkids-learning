@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Card, CardContent, Chip, Typography, Button, Stack, Alert } from '@mui/material';
 import { ActivityReward, DifficultyLevel } from '../../types';
 import analyticsService from '../../services/analytics.service';
@@ -25,6 +25,7 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess
   const [matched, setMatched] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>('Fais glisser les émotions vers les bons mots !');
   const [hasCompleted, setHasCompleted] = useState(false);
+  const sessionStartRef = useRef(Date.now());
 
   useEffect(() => {
     analyticsService.sendEvent({
@@ -33,6 +34,7 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess
       type: 'activity_start',
       timestamp: new Date().toISOString(),
       difficulty,
+      supportLevel: 'none',
     });
   }, [childId, difficulty]);
 
@@ -47,15 +49,19 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess
           : `Encore ${remaining} émotions à associer.`;
       setFeedback(message);
       onComplete?.({ matched: updated.length, total: emotions.length });
-      analyticsService.sendEvent({
-        activityId: 'emotions-dnd',
-        childId,
-        type: 'attempt',
-        timestamp: new Date().toISOString(),
-        difficulty,
-        attempts: updated.length,
-        successRate: updated.length / emotions.length,
-      });
+        analyticsService.sendEvent({
+          activityId: 'emotions-dnd',
+          childId,
+          type: 'attempt',
+          timestamp: new Date().toISOString(),
+          difficulty,
+          attempts: updated.length,
+          successRate: updated.length / emotions.length,
+          supportLevel: 'minimal',
+          dominantEmotion: label,
+          emotionalState: label,
+          durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+        });
       if (remaining === 0 && !hasCompleted) {
         onSuccess?.({
           activityId: 'emotions-dnd',
@@ -63,15 +69,19 @@ const EmotionDragDrop: React.FC<EmotionDragDropProps> = ({ onComplete, onSuccess
           badgeId: 'badge_empathie',
           message: 'Tu as débloqué le badge empathie !',
         });
-        analyticsService.sendEvent({
-          activityId: 'emotions-dnd',
-          childId,
-          type: 'success',
-          timestamp: new Date().toISOString(),
-          difficulty,
-          attempts: updated.length,
-          successRate: 1,
-        });
+          analyticsService.sendEvent({
+            activityId: 'emotions-dnd',
+            childId,
+            type: 'success',
+            timestamp: new Date().toISOString(),
+            difficulty,
+            attempts: updated.length,
+            successRate: 1,
+            dominantEmotion: label,
+            emotionalState: label,
+            supportLevel: 'minimal',
+            durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+          });
         setHasCompleted(true);
       }
     }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Card, CardContent, Chip, Typography, Stack, Alert, Button } from '@mui/material';
 import { ActivityReward, DifficultyLevel } from '../../types';
 import analyticsService from '../../services/analytics.service';
@@ -26,14 +26,16 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess, metadata
 
   const [sentence, setSentence] = useState<string[]>(['Je veux']);
   const [celebrated, setCelebrated] = useState(false);
+  const sessionStartRef = useRef(Date.now());
 
   useEffect(() => {
     analyticsService.sendEvent({
-      activityId: 'aac-board',
+      activityId: 'caa-board',
       childId,
       type: 'activity_start',
       timestamp: new Date().toISOString(),
       difficulty,
+      supportLevel: 'none',
     });
   }, [childId, difficulty]);
 
@@ -43,30 +45,38 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess, metadata
     onMessageBuilt?.(updated.join(' '));
 
     analyticsService.sendEvent({
-      activityId: 'aac-board',
+      activityId: 'caa-board',
       childId,
       type: 'attempt',
       timestamp: new Date().toISOString(),
       difficulty,
       attempts: updated.length,
+      supportLevel: 'moderate',
+      dominantEmotion: 'engaged',
+      emotionalState: 'engaged',
+      durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
     });
 
     if (updated.length >= 4 && !celebrated) {
-      onSuccess?.({
-        activityId: 'aac-board',
-        tokens: 15,
-        badgeId: 'badge_communicateur',
-        message: 'Message complet envoyé !',
-      });
-      analyticsService.sendEvent({
-        activityId: 'aac-board',
-        childId,
-        type: 'success',
-        timestamp: new Date().toISOString(),
-        difficulty,
-        attempts: updated.length,
-        successRate: 1,
-      });
+        onSuccess?.({
+          activityId: 'caa-board',
+          tokens: 15,
+          badgeId: 'badge_communicateur',
+          message: 'Message complet envoyé !',
+        });
+        analyticsService.sendEvent({
+          activityId: 'caa-board',
+          childId,
+          type: 'success',
+          timestamp: new Date().toISOString(),
+          difficulty,
+          attempts: updated.length,
+          successRate: 1,
+          supportLevel: 'moderate',
+          dominantEmotion: 'confident',
+          emotionalState: 'confident',
+          durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+        });
       setCelebrated(true);
     }
   };

@@ -160,8 +160,8 @@ superkids-learning/
 - Données d'entrée typiques : taux de réussite, nombre d'essais, signaux émotionnels légers, préférences sensorielles pour éviter la surcharge.
 
 ### Télémétrie des activités (nouveau)
-- Le frontend envoie désormais les événements de démarrage, d'essais, de réussite et d'état émotionnel via `frontend/src/services/analytics.service.ts`.
-- Le backend expose `/api/progress/events` pour collecter et agréger ces événements, enrichissant `ActivitySession` et `Progress` avec la durée, les essais, le taux de réussite et l'état émotionnel dominant.
+- Le frontend envoie désormais les événements de démarrage, d'essais, de réussite et d'état émotionnel via `frontend/src/services/analytics.service.ts`. Les composants d'activités publient la durée écoulée, le niveau de support, l'émotion dominante et les tentatives pour chaque action.
+- Le backend expose `/api/progress/events` (contrôleur `progress.controller.ts`, service `progress.service.ts`) pour collecter et agréger ces événements, enrichissant `ActivitySession` et `Progress` avec la durée, les essais, le taux de réussite et l'état émotionnel dominant. La page `AnalyticsPage.tsx` consomme ces agrégats pour afficher timeline, radar par compétence et histogramme d'émotions.
 
 ### Thème et préférences sensorielles (nouveau)
 - `frontend/src/store/slices/settingsSlice.ts` gère maintenant le contraste (standard/élevé/maximal), les palettes neuro-inclusives (calme, vibrante, monochrome), le volume global et les animations/audio cues.
