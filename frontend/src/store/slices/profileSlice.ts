@@ -15,6 +15,12 @@ const initialState: ProfileState = {
   error: null,
 };
 
+type ToggleablePreferenceKey =
+  | 'soundEnabled'
+  | 'animationsEnabled'
+  | 'dyslexiaMode'
+  | 'highContrastMode';
+
 const profileSlice = createSlice({
   name: 'profile',
   initialState,
@@ -35,7 +41,7 @@ const profileSlice = createSlice({
         state.currentProfile.sensoryPreferences = action.payload;
       }
     },
-    togglePreference: (state, action: PayloadAction<keyof ChildProfile['preferences']>) => {
+    togglePreference: (state, action: PayloadAction<ToggleablePreferenceKey>) => {
       if (state.currentProfile) {
         const key = action.payload;
         if (typeof state.currentProfile.preferences[key] === 'boolean') {

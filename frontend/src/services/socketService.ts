@@ -40,7 +40,6 @@ type SocketType = Socket<ServerToClientEvents, ClientToServerEvents>;
 class SocketService {
   private socket: SocketType | null = null;
   private isConnected = false;
-  private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private listeners: Map<string, Set<Function>> = new Map();
 
@@ -75,7 +74,6 @@ class SocketService {
     this.socket.on('connect', () => {
       console.log('✅ Socket connected:', this.socket?.id);
       this.isConnected = true;
-      this.reconnectAttempts = 0;
 
       // S'authentifier avec le token
       const token = localStorage.getItem('authToken');

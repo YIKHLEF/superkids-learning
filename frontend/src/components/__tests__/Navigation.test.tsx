@@ -27,6 +27,6 @@ describe('Navigation Component', () => {
 
   it('should render subtitle', () => {
     renderWithRouter(<Navigation />);
-    expect(screen.getByText('Apprendre en s'amusant')).toBeInTheDocument();
+    expect(screen.getByText("Apprendre en s'amusant")).toBeInTheDocument();
   });
 });

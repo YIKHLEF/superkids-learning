@@ -2564,6 +2564,12 @@ const corsOptions = {
 
 SuperKids Learning implémente un système complet d'optimisation des performances pour garantir une expérience utilisateur fluide et réactive, même avec un volume élevé de données et d'utilisateurs concurrents.
 
+### 0. Optimisations Frontend (bundles + CDN)
+
+- **Code splitting**: pages React chargées en `React.lazy` + `Suspense` pour créer des chunks dédiés aux vues lourdes (dashboard, analytics, activités...).
+- **CDN-ready build**: Vite expose `VITE_CDN_URL` pour générer des URLs absolues vers CloudFront/Azure CDN, avec manifest `dist/manifest.json` pour le reverse-proxy.
+- **Cache longue durée**: assets versionnés (`assets/[name].[hash].js|css`) servis via CDN, tandis que `index.html` reste livré par le conteneur pour router correctement.
+
 ### 1. Cache Redis
 
 #### CacheService Complet
