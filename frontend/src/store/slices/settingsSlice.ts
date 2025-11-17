@@ -14,6 +14,11 @@ const initialState: SettingsState = {
     fontSize: 'medium',
     colorScheme: 'light',
     soundEnabled: true,
+    audioCuesEnabled: true,
+    animationsEnabled: true,
+    contrastLevel: 'standard',
+    palette: 'calm',
+    globalVolume: 80,
     dyslexiaFont: false,
     autoRead: false,
   },
@@ -37,15 +42,43 @@ const settingsSlice = createSlice({
       state.theme = action.payload;
       if (action.payload === 'highContrast') {
         state.accessibility.highContrast = true;
+        state.accessibility.contrastLevel = 'high';
+        state.accessibility.palette = 'monochrome';
       } else if (action.payload === 'dyslexia') {
         state.accessibility.dyslexiaFont = true;
+        state.accessibility.fontSize = 'large';
+      } else {
+        state.accessibility.highContrast = false;
       }
     },
     setFontSize: (state, action: PayloadAction<AccessibilitySettings['fontSize']>) => {
       state.accessibility.fontSize = action.payload;
     },
+    setPalette: (state, action: PayloadAction<AccessibilitySettings['palette']>) => {
+      state.accessibility.palette = action.payload;
+    },
+    setContrastLevel: (state, action: PayloadAction<AccessibilitySettings['contrastLevel']>) => {
+      state.accessibility.contrastLevel = action.payload;
+      state.accessibility.highContrast = action.payload !== 'standard';
+    },
+    setColorScheme: (state, action: PayloadAction<AccessibilitySettings['colorScheme']>) => {
+      state.accessibility.colorScheme = action.payload;
+    },
+    setGlobalVolume: (state, action: PayloadAction<number>) => {
+      state.accessibility.globalVolume = Math.max(0, Math.min(100, action.payload));
+      state.accessibility.soundEnabled = state.accessibility.globalVolume > 0;
+    },
   },
 });
 
-export const { updateAccessibility, toggleSetting, setTheme, setFontSize } = settingsSlice.actions;
+export const {
+  updateAccessibility,
+  toggleSetting,
+  setTheme,
+  setFontSize,
+  setPalette,
+  setContrastLevel,
+  setColorScheme,
+  setGlobalVolume,
+} = settingsSlice.actions;
 export default settingsSlice.reducer;

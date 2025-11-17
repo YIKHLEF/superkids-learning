@@ -206,6 +206,11 @@ export interface AccessibilitySettings {
   fontSize: 'small' | 'medium' | 'large' | 'extra-large';
   colorScheme: 'light' | 'dark' | 'auto';
   soundEnabled: boolean;
+  audioCuesEnabled: boolean;
+  animationsEnabled: boolean;
+  contrastLevel: 'standard' | 'high' | 'maximum';
+  palette: 'calm' | 'vibrant' | 'monochrome';
+  globalVolume: number;
   dyslexiaFont: boolean;
   autoRead: boolean;
 }

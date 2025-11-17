@@ -82,6 +82,8 @@ L'application offre plusieurs modes d'accessibilité:
 - **Mode Hypersensibilité**: Réduction maximale des stimuli
 - **Mouvement Réduit**: Respect des préférences de mouvement réduit
 - **Lecture Automatique**: Synthèse vocale pour le texte
+- **Palettes neuro-inclusives**: Sélection calme/vibrante/monochrome avec intensité de contraste ajustable
+- **Préférences sensorielles globales**: Volume unique, indices audio discrets, animations adaptables, prévisualisation en direct
 
 ## 🛠 Technologies
 
