@@ -189,6 +189,13 @@ export interface AdaptiveRecommendation {
   escalationWarnings?: string[];
 }
 
+export type RecommendationSource = 'ml' | 'heuristic' | 'fallback';
+
+export interface AdaptiveEngineResult {
+  recommendation: AdaptiveRecommendation;
+  source: RecommendationSource;
+}
+
 export interface Resource {
   id: string;
   title: string;

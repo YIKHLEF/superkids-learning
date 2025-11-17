@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import adaptiveService from '../services/adaptiveService';
 import {
   Activity,
   AdaptiveContext,
   AdaptiveRecommendation,
   ActivityRecommendation,
+  AdaptiveEngineResult,
   DifficultyLevel,
+  RecommendationSource,
 } from '../types';
 
-type SuggestionSource = 'remote' | 'fallback' | 'none';
+type SuggestionSource = RecommendationSource | 'none';
 
 interface AdaptiveState {
   recommendation?: AdaptiveRecommendation;
@@ -98,36 +100,74 @@ export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
   const [state, setState] = useState<AdaptiveState>({ loading: false, source: 'none' });
 
   const memoizedContext = useMemo(() => context, [context]);
+  const cacheRef = useRef<Map<string, AdaptiveEngineResult & { cachedAt: number }>>(new Map());
 
-  const fallback = useCallback(() => {
+  const contextKey = useMemo(() => {
     if (!memoizedContext) return null;
-    return buildRecommendationPayload(memoizedContext);
+    const { childId, targetCategory, currentDifficulty, currentActivityId, recentPerformance, sensoryPreferences } =
+      memoizedContext;
+    return JSON.stringify({
+      childId,
+      targetCategory,
+      currentDifficulty,
+      currentActivityId,
+      performance: recentPerformance[0],
+      sensoryPreferences,
+    });
   }, [memoizedContext]);
 
-  const refresh = useCallback(async () => {
-    if (!memoizedContext) return;
-    setState((prev) => ({ ...prev, loading: true, error: undefined }));
+  const fallback = useCallback((): AdaptiveEngineResult | null => {
+    if (!memoizedContext) return null;
+    return { recommendation: buildRecommendationPayload(memoizedContext), source: 'fallback' as RecommendationSource };
+  }, [memoizedContext]);
 
-    try {
-      const recommendation = await adaptiveService.getRecommendations(memoizedContext);
-      setState({ recommendation, loading: false, source: 'remote' });
-    } catch (error) {
-      const local = fallback();
-      if (local) {
-        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-        setState({
-          recommendation: local,
-          loading: false,
-          error: offline
-            ? 'Recommandation locale (mode hors ligne)'
-            : 'Fallback heuristique (API indisponible)',
-          source: 'fallback',
-        });
-      } else {
-        setState({ loading: false, error: 'Impossible de récupérer les recommandations', source: 'none' });
+  const refresh = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!memoizedContext) return;
+
+      if (!options?.force && contextKey) {
+        const cached = cacheRef.current.get(contextKey);
+        if (cached) {
+          setState({
+            recommendation: cached.recommendation,
+            loading: false,
+            error: undefined,
+            source: cached.source,
+          });
+          return;
+        }
       }
-    }
-  }, [memoizedContext, fallback]);
+
+      setState((prev) => ({ ...prev, loading: true, error: undefined }));
+
+      try {
+        const result = await adaptiveService.getRecommendations(memoizedContext);
+        if (contextKey) {
+          cacheRef.current.set(contextKey, { ...result, cachedAt: Date.now() });
+        }
+        setState({ recommendation: result.recommendation, loading: false, error: undefined, source: result.source });
+      } catch (error) {
+        const local = fallback();
+        if (local) {
+          if (contextKey) {
+            cacheRef.current.set(contextKey, { ...local, cachedAt: Date.now() });
+          }
+          const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+          setState({
+            recommendation: local.recommendation,
+            loading: false,
+            error: offline
+              ? 'Recommandation locale (mode hors ligne)'
+              : 'Fallback heuristique (API indisponible)',
+            source: 'fallback',
+          });
+        } else {
+          setState({ loading: false, error: 'Impossible de récupérer les recommandations', source: 'none' });
+        }
+      }
+    },
+    [memoizedContext, contextKey, fallback]
+  );
 
   useEffect(() => {
     if (memoizedContext) {

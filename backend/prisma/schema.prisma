@@ -200,3 +200,17 @@ model Message {
 
   @@map("messages")
 }
+
+model AdaptiveRecommendation {
+  id                String       @id @default(uuid())
+  childId           String
+  child             ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  source            String
+  requestedContext  Json
+  recommendation    Json
+  latencyMs         Int?
+  createdAt         DateTime     @default(now())
+
+  @@map("adaptive_recommendations")
+}

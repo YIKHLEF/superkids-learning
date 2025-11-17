@@ -147,6 +147,42 @@ export const unlockRewardSchema = z.object({
 });
 
 // ============================================================================
+// Schémas Adaptive Engine
+// ============================================================================
+
+const performanceSignalSchema = z.object({
+  successRate: z.number().min(0).max(1),
+  attemptsCount: z.number().int().nonnegative(),
+  averageTimePerQuestion: z.number().positive().optional(),
+  emotionalState: z.enum(['calm', 'engaged', 'frustrated', 'anxious', 'neutral']).optional(),
+  supportLevel: z.enum(['none', 'minimal', 'moderate', 'full']).optional(),
+});
+
+export const adaptiveContextSchema = z.object({
+  childId: uuidSchema,
+  targetCategory: z.enum([
+    'SOCIAL_SKILLS',
+    'COMMUNICATION',
+    'ACADEMIC',
+    'AUTONOMY',
+    'EMOTIONAL_REGULATION',
+  ]),
+  currentDifficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  recentPerformance: z.array(performanceSignalSchema).min(1),
+  currentActivityId: uuidSchema.optional(),
+  personalization: z
+    .object({
+      prefersLowStimuli: z.boolean().optional(),
+      shortSessionsPreferred: z.boolean().optional(),
+      regulationNeeded: z.boolean().optional(),
+    })
+    .optional(),
+  sensoryPreferences: z
+    .array(z.enum(['LOW_STIMULATION', 'MEDIUM_STIMULATION', 'HIGH_CONTRAST', 'MONOCHROME']))
+    .optional(),
+});
+
+// ============================================================================
 // Schémas de Ressources
 // ============================================================================
 
