@@ -8,16 +8,27 @@ import {
   DifficultyLevel,
 } from '../types';
 
+type SuggestionSource = 'remote' | 'fallback' | 'none';
+
 interface AdaptiveState {
   recommendation?: AdaptiveRecommendation;
   loading: boolean;
   error?: string;
+  source: SuggestionSource;
 }
 
-const adjustDifficulty = (current: DifficultyLevel, successRate?: number, attempts?: number, emotionalState?: string) => {
+const adjustDifficulty = (
+  current: DifficultyLevel,
+  successRate?: number,
+  attempts?: number,
+  emotionalState?: string,
+  sensoryPreferences?: string[]
+) => {
   if (successRate === undefined || attempts === undefined) return current;
 
-  if (successRate > 0.85 && attempts <= 2 && emotionalState !== 'frustrated') {
+  const prefersLowStimuli = sensoryPreferences?.includes('LOW_STIMULATION');
+
+  if (successRate > 0.85 && attempts <= 2 && emotionalState !== 'frustrated' && !prefersLowStimuli) {
     return current === DifficultyLevel.BEGINNER
       ? DifficultyLevel.INTERMEDIATE
       : DifficultyLevel.ADVANCED;
@@ -29,6 +40,10 @@ const adjustDifficulty = (current: DifficultyLevel, successRate?: number, attemp
       : DifficultyLevel.BEGINNER;
   }
 
+  if (prefersLowStimuli && current === DifficultyLevel.ADVANCED) {
+    return DifficultyLevel.INTERMEDIATE;
+  }
+
   return current;
 };
 
@@ -38,7 +53,8 @@ const buildRecommendationPayload = (context: AdaptiveContext): AdaptiveRecommend
     context.currentDifficulty,
     latest?.successRate,
     latest?.attemptsCount,
-    latest?.emotionalState
+    latest?.emotionalState,
+    context.sensoryPreferences
   );
 
   const recommendations: ActivityRecommendation[] = [
@@ -79,7 +95,7 @@ const buildRecommendationPayload = (context: AdaptiveContext): AdaptiveRecommend
 };
 
 export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
-  const [state, setState] = useState<AdaptiveState>({ loading: false });
+  const [state, setState] = useState<AdaptiveState>({ loading: false, source: 'none' });
 
   const memoizedContext = useMemo(() => context, [context]);
 
@@ -94,13 +110,21 @@ export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
 
     try {
       const recommendation = await adaptiveService.getRecommendations(memoizedContext);
-      setState({ recommendation, loading: false });
+      setState({ recommendation, loading: false, source: 'remote' });
     } catch (error) {
       const local = fallback();
       if (local) {
-        setState({ recommendation: local, loading: false, error: 'Fallback heuristique (API indisponible)' });
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        setState({
+          recommendation: local,
+          loading: false,
+          error: offline
+            ? 'Recommandation locale (mode hors ligne)'
+            : 'Fallback heuristique (API indisponible)',
+          source: 'fallback',
+        });
       } else {
-        setState({ loading: false, error: 'Impossible de récupérer les recommandations' });
+        setState({ loading: false, error: 'Impossible de récupérer les recommandations', source: 'none' });
       }
     }
   }, [memoizedContext, fallback]);
@@ -112,7 +136,7 @@ export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
   }, [memoizedContext, refresh]);
 
   const applyRecommendation = useCallback(
-    (activities: Activity[]) => {
+    <T extends { category: Activity['category']; difficulty: DifficultyLevel }>(activities: T[]) => {
       if (!state.recommendation) return activities;
       const weightMap = new Map<string, ActivityRecommendation>();
       state.recommendation.recommendations.forEach((rec) => {
@@ -127,7 +151,7 @@ export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
             ...activity,
             suggestedDifficulty: rec?.difficulty ?? activity.difficulty,
             adaptiveWeight: rec?.weight ?? 0,
-          } as Activity & { suggestedDifficulty: DifficultyLevel; adaptiveWeight: number };
+          } as T & { suggestedDifficulty: DifficultyLevel; adaptiveWeight: number };
         })
         .sort((a, b) => (b as any).adaptiveWeight - (a as any).adaptiveWeight);
     },
@@ -138,6 +162,7 @@ export const useAdaptiveLevel = (context?: AdaptiveContext | null) => {
     recommendation: state.recommendation,
     loading: state.loading,
     error: state.error,
+    source: state.source,
     refresh,
     applyRecommendation,
   };

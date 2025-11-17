@@ -123,6 +123,7 @@ export interface AdaptiveContext {
     shortSessionsPreferred?: boolean;
     regulationNeeded?: boolean;
   };
+  sensoryPreferences?: SensoryPreference[];
 }
 
 export interface ActivityRecommendation {

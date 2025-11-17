@@ -149,6 +149,7 @@ superkids-learning/
 
 ## Moteur Adaptatif (nouveau)
 - Backend : `backend/src/services/adaptive.service.ts` expose une API interne d'« Adaptive Engine » combinant heuristique explicable et connecteur ML optionnel (configurable via `ADAPTIVE_ML_ENABLED`, `ADAPTIVE_ML_ENDPOINT`, `ADAPTIVE_ML_API_KEY`).
+- Endpoint dédié : `POST /api/adaptive/recommendations` (contrôleur `backend/src/controllers/adaptive.controller.ts`, routes `backend/src/routes/adaptive.routes.ts`, documenté dans Swagger) accepte scores/essais/signaux émotionnels/préférences sensorielles et renvoie les recommandations.
 - Frontend : hook `frontend/src/hooks/useAdaptiveLevel.ts` pour consommer les recommandations et ajuster la difficulté des activités, avec fallback local si l'API n'est pas disponible.
 - Données d'entrée typiques : taux de réussite, nombre d'essais, signaux émotionnels légers, préférences sensorielles pour éviter la surcharge.
 
