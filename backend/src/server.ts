@@ -18,6 +18,7 @@ import messageRoutes from './routes/message.routes';
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
+import { metricsHandler, prometheusMiddleware } from './middleware/prometheus';
 import { logger } from './utils/logger';
 
 // Services
@@ -73,6 +74,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(prometheusMiddleware);
 app.use(rateLimiter);
 
 // Documentation Swagger
@@ -129,6 +131,8 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
   });
 });
+
+app.get('/metrics', metricsHandler);
 
 /**
  * @openapi

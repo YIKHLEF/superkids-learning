@@ -307,6 +307,26 @@ Déjà configuré dans `backend/src/middleware/rateLimiter.ts`
 
 ### Monitoring et Logs
 
+#### Stack Prometheus / Grafana
+
+- Le fichier `docker-compose.monitoring.yml` démarre Prometheus (port 9090), Grafana (port 3001) et Node Exporter.
+- La configuration Prometheus se trouve dans `monitoring/prometheus.yml` et scrape l'endpoint `/metrics` du backend.
+- Activer les métriques dans le backend en exposant le port 5000 et en laissant accessible l'URL `http://backend:5000/metrics`.
+
+**Démarrage local**
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+# Grafana : http://localhost:3001 (mot de passe par défaut : changeme)
+```
+
+#### Export des logs vers ELK / OpenSearch
+
+- Le logger Winston envoie par défaut les logs en console et fichiers.
+- Pour pousser vers une stack ELK/Opensearch via HTTP/ingest, définir :
+  - `ELK_HTTP_ENDPOINT` (ex: `https://opensearch.example.com/logs`)
+  - `ELK_USERNAME` / `ELK_PASSWORD` (optionnel pour l'authentification basique)
+- Le transport HTTP est activé automatiquement si l'endpoint est défini.
+
 #### 1. Application Monitoring
 
 **Option: PM2 (Node.js)**
@@ -358,22 +378,24 @@ curl https://api.superkids.com/health
 
 #### Base de Données
 
-**Backup automatique quotidien**:
-```bash
-#!/bin/bash
-# backup.sh
-DATE=$(date +%Y%m%d)
-pg_dump -h localhost -U superkids superkids_learning | gzip > /backups/db_$DATE.sql.gz
+Le script `scripts/backup-db.sh` crée un dump PostgreSQL compressé et peut l'envoyer vers S3.
 
-# Garder seulement les 30 derniers jours
-find /backups -name "db_*.sql.gz" -mtime +30 -delete
+**Variables importantes**
+- `DATABASE_URL` (ou `PGHOST`/`PGUSER`/`PGDATABASE`) pour cibler la base.
+- `BACKUP_DIR` pour définir le dossier local (défaut `./backups`).
+- `S3_BUCKET` (optionnel) pour pousser automatiquement le dump.
+- `BACKUP_RETENTION_DAYS` pour la rétention locale (défaut 30 jours).
+
+**Exécution manuelle**
+```bash
+chmod +x scripts/backup-db.sh
+BACKUP_DIR=/var/backups/superkids S3_BUCKET=superkids-backups scripts/backup-db.sh
 ```
 
-**Cron job**:
+**Cron job**
 ```bash
 crontab -e
-# Ajouter:
-0 2 * * * /path/to/backup.sh
+0 2 * * * BACKUP_DIR=/var/backups/superkids S3_BUCKET=superkids-backups /path/to/repo/scripts/backup-db.sh >> /var/log/backup.log 2>&1
 ```
 
 #### Fichiers Uploads
