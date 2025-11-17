@@ -64,7 +64,7 @@ model ChildProfile {
   avatarUrl             String?
   sensoryPreferences    SensoryPreference[]
   developmentLevel      String
-  iepGoals              Json               @default("[]")
+  iepGoals              Json               @default("[]") // [{ title, description, targetDate, status }]
   roles                 UserRole[]         @default([])
 
   // Préférences
@@ -73,6 +73,7 @@ model ChildProfile {
   dyslexiaMode          Boolean             @default(false)
   highContrastMode      Boolean             @default(false)
   fontSize              String              @default("medium")
+  uiPreferences         Json               @default("{}")
 
   // Relations
   parentIds             String[]

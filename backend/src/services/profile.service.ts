@@ -1,5 +1,16 @@
 import { PrismaClient, ChildProfile } from '@prisma/client';
-import { UpdateProfileDTO, PreferencesDTO, AppError, UploadMetadata } from '../types';
+import { ZodError } from 'zod';
+import {
+  UpdateProfileDTO,
+  PreferencesDTO,
+  AppError,
+  UploadMetadata,
+} from '../types';
+import {
+  parsePreferencesDTO,
+  parseUpdateProfileDTO,
+  uiPreferencesSchema,
+} from '../types/profile';
 import { logger } from '../utils/logger';
 import { storageClient } from '../utils/storageClient';
 
@@ -81,18 +92,23 @@ export class ProfileService {
         throw new AppError('Un profil existe déjà pour cet utilisateur', 409);
       }
 
-      // Créer le profil
+      const parsedGoals = profileData.iepGoals
+        ? parseUpdateProfileDTO({ iepGoals: profileData.iepGoals }).iepGoals
+        : [];
+      const parsedUiPreferences = uiPreferencesSchema.parse(profileData.uiPreferences ?? {});
+
       const profile = await this.prisma.childProfile.create({
         data: {
           userId,
           dateOfBirth: profileData.dateOfBirth,
           age: profileData.age,
           developmentLevel: profileData.developmentLevel || 'beginner',
-          iepGoals: profileData.iepGoals || [],
+          iepGoals: parsedGoals || [],
           parentIds: profileData.parentIds || [],
           educatorIds: profileData.educatorIds || [],
           sensoryPreferences: profileData.sensoryPreferences || [],
           roles: profileData.roles || [],
+          uiPreferences: parsedUiPreferences,
         },
         include: {
           user: {
@@ -119,6 +135,9 @@ export class ProfileService {
       if (error instanceof AppError) {
         throw error;
       }
+      if (error instanceof ZodError) {
+        throw new AppError(error.errors[0]?.message || 'Profil invalide', 400);
+      }
       logger.error('Erreur lors de la création du profil:', error);
       throw new AppError('Erreur lors de la création du profil', 500);
     }
@@ -140,19 +159,28 @@ export class ProfileService {
         throw new AppError('Profil introuvable', 404);
       }
 
+      const parsedData = parseUpdateProfileDTO(data);
+      const mergedUiPreferences = parsedData.uiPreferences
+        ? {
+            ...uiPreferencesSchema.parse(profile.uiPreferences ?? {}),
+            ...parsedData.uiPreferences,
+          }
+        : undefined;
+
       const updatedProfile = await this.prisma.childProfile.update({
         where: { userId },
         data: {
-          ...(data.dateOfBirth && { dateOfBirth: data.dateOfBirth }),
-          ...(data.avatarUrl && { avatarUrl: data.avatarUrl }),
-          ...(data.developmentLevel && {
-            developmentLevel: data.developmentLevel,
+          ...(parsedData.dateOfBirth && { dateOfBirth: parsedData.dateOfBirth }),
+          ...(parsedData.avatarUrl && { avatarUrl: parsedData.avatarUrl }),
+          ...(parsedData.developmentLevel && {
+            developmentLevel: parsedData.developmentLevel,
           }),
-          ...(data.iepGoals && { iepGoals: data.iepGoals }),
-          ...(data.parentIds && { parentIds: data.parentIds }),
-          ...(data.educatorIds && { educatorIds: data.educatorIds }),
-          ...(data.sensoryPreferences && { sensoryPreferences: data.sensoryPreferences }),
-          ...(data.roles && { roles: data.roles }),
+          ...(parsedData.iepGoals && { iepGoals: parsedData.iepGoals }),
+          ...(parsedData.parentIds && { parentIds: parsedData.parentIds }),
+          ...(parsedData.educatorIds && { educatorIds: parsedData.educatorIds }),
+          ...(parsedData.sensoryPreferences && { sensoryPreferences: parsedData.sensoryPreferences }),
+          ...(parsedData.roles && { roles: parsedData.roles }),
+          ...(mergedUiPreferences && { uiPreferences: mergedUiPreferences }),
         },
         include: {
           user: {
@@ -171,6 +199,9 @@ export class ProfileService {
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
+      }
+      if (error instanceof ZodError) {
+        throw new AppError(error.errors[0]?.message || 'Données invalides', 400);
       }
       logger.error('Erreur lors de la mise à jour du profil:', error);
       throw new AppError('Erreur lors de la mise à jour du profil', 500);
@@ -193,22 +224,31 @@ export class ProfileService {
         throw new AppError('Profil introuvable', 404);
       }
 
+      const parsedPreferences = parsePreferencesDTO(preferences);
+      const mergedUiPreferences = parsedPreferences.uiPreferences
+        ? {
+            ...uiPreferencesSchema.parse(profile.uiPreferences ?? {}),
+            ...parsedPreferences.uiPreferences,
+          }
+        : uiPreferencesSchema.parse(profile.uiPreferences ?? {});
+
       const updatedProfile = await this.prisma.childProfile.update({
         where: { userId },
         data: {
-          ...(preferences.soundEnabled !== undefined && {
-            soundEnabled: preferences.soundEnabled,
+          ...(parsedPreferences.soundEnabled !== undefined && {
+            soundEnabled: parsedPreferences.soundEnabled,
           }),
-          ...(preferences.animationsEnabled !== undefined && {
-            animationsEnabled: preferences.animationsEnabled,
+          ...(parsedPreferences.animationsEnabled !== undefined && {
+            animationsEnabled: parsedPreferences.animationsEnabled,
           }),
-          ...(preferences.dyslexiaMode !== undefined && {
-            dyslexiaMode: preferences.dyslexiaMode,
+          ...(parsedPreferences.dyslexiaMode !== undefined && {
+            dyslexiaMode: parsedPreferences.dyslexiaMode,
           }),
-          ...(preferences.highContrastMode !== undefined && {
-            highContrastMode: preferences.highContrastMode,
+          ...(parsedPreferences.highContrastMode !== undefined && {
+            highContrastMode: parsedPreferences.highContrastMode,
           }),
-          ...(preferences.fontSize && { fontSize: preferences.fontSize }),
+          ...(parsedPreferences.fontSize && { fontSize: parsedPreferences.fontSize }),
+          uiPreferences: mergedUiPreferences,
         },
       });
 
@@ -217,6 +257,9 @@ export class ProfileService {
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
+      }
+      if (error instanceof ZodError) {
+        throw new AppError(error.errors[0]?.message || 'Préférences invalides', 400);
       }
       logger.error('Erreur lors de la mise à jour des préférences:', error);
       throw new AppError(
