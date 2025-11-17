@@ -1,0 +1,9 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dire bonjour">
+  <rect x="8" y="8" width="144" height="144" rx="30" fill="#FFF4B8" stroke="#DFD498" stroke-width="4" />
+  <path d="M80 115 C 80 92 70 64 70 48" stroke="#3A3A3A" stroke-width="6" stroke-linecap="round" fill="none" />
+  <path d="M90 115 C 90 92 100 64 100 48" stroke="#3A3A3A" stroke-width="6" stroke-linecap="round" fill="none" />
+  <circle cx="80" cy="70" r="24" fill="#FFFFFF" stroke="#3A3A3A" stroke-width="4" />
+  <path d="M68 72 C72 78 88 78 92 72" stroke="#3A3A3A" stroke-width="4" fill="none" stroke-linecap="round" />
+  <circle cx="72" cy="64" r="4" fill="#3A3A3A" />
+  <circle cx="88" cy="64" r="4" fill="#3A3A3A" />
+</svg>
