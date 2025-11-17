@@ -1,6 +1,7 @@
 import { PrismaClient, ChildProfile } from '@prisma/client';
-import { UpdateProfileDTO, PreferencesDTO, AppError } from '../types';
+import { UpdateProfileDTO, PreferencesDTO, AppError, UploadMetadata } from '../types';
 import { logger } from '../utils/logger';
+import { storageClient } from '../utils/storageClient';
 
 export class ProfileService {
   private prisma: PrismaClient;
@@ -298,6 +299,31 @@ export class ProfileService {
       logger.error('Erreur lors de la récupération des profils:', error);
       throw new AppError('Erreur lors de la récupération des profils', 500);
     }
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file?: Express.Multer.File
+  ): Promise<{ profile: ChildProfile; metadata: UploadMetadata }> {
+    if (!file) {
+      throw new AppError('Aucun fichier fourni', 400);
+    }
+
+    const profile = await this.prisma.childProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      throw new AppError('Profil introuvable', 404);
+    }
+
+    const metadata = await storageClient.upload(file, 'avatars');
+    const updated = await this.prisma.childProfile.update({
+      where: { userId },
+      data: { avatarUrl: metadata.url },
+    });
+
+    return { profile: updated, metadata };
   }
 
   /**

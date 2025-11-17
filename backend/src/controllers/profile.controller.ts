@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { AppError } from '../middleware/errorHandler';
+import { NextFunction, Request, Response } from 'express';
+import { ServiceFactory } from '../services';
 
 export const getProfile = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -44,7 +44,6 @@ export const updateProfile = async (req: Request, res: Response) => {
 };
 
 export const updatePreferences = async (req: Request, res: Response) => {
-  const { id } = req.params;
   const preferences = req.body;
 
   res.json({
@@ -55,11 +54,32 @@ export const updatePreferences = async (req: Request, res: Response) => {
   });
 };
 
-export const getChildProfiles = async (req: Request, res: Response) => {
+export const getChildProfiles = async (_req: Request, res: Response) => {
   res.json({
     status: 'success',
     data: {
       profiles: [],
     },
   });
+};
+
+export const uploadAvatar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const service = ServiceFactory.getProfileService();
+    const { profile, metadata } = await service.uploadAvatar(id, req.file);
+
+    res.json({
+      success: true,
+      message: 'Avatar mis à jour avec succès',
+      data: profile,
+      metadata,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

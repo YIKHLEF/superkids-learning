@@ -6,8 +6,10 @@ import {
   AppError,
   PaginationOptions,
   PaginatedResponse,
+  UploadMetadata,
 } from '../types';
 import { logger } from '../utils/logger';
+import { storageClient } from '../utils/storageClient';
 
 export class ResourceService {
   private prisma: PrismaClient;
@@ -214,6 +216,30 @@ export class ResourceService {
       logger.error('Erreur lors de la mise à jour de la ressource:', error);
       throw new AppError('Erreur lors de la mise à jour de la ressource', 500);
     }
+  }
+
+  async uploadResourceAsset(
+    file?: Express.Multer.File,
+    info?: Partial<CreateResourceDTO>
+  ): Promise<{ resource: Resource; metadata: UploadMetadata }> {
+    if (!file) {
+      throw new AppError('Aucun fichier fourni', 400);
+    }
+
+    const metadata = await storageClient.upload(file, 'resources');
+    const resource = await this.prisma.resource.create({
+      data: {
+        title: info?.title || file.originalname,
+        description: info?.description || 'Ressource importée',
+        type: info?.type || file.mimetype.split('/')[0],
+        category: info?.category || 'general',
+        url: metadata.url,
+        thumbnailUrl: info?.thumbnailUrl,
+        tags: info?.tags || [],
+      },
+    });
+
+    return { resource, metadata };
   }
 
   /**

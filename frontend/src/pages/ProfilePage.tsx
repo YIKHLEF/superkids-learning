@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -22,6 +22,9 @@ const ProfilePage: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
   const settings = useSelector((state: RootState) => state.settings.accessibility);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarName, setAvatarName] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
 
   const fontSizeMap = {
     small: 14,
@@ -34,6 +37,37 @@ const ProfilePage: React.FC = () => {
     const sizes: Array<keyof typeof fontSizeMap> = ['small', 'medium', 'large', 'extra-large'];
     const index = Math.floor((value / 100) * (sizes.length - 1));
     dispatch(setFontSize(sizes[index]));
+  };
+
+  const validateAvatar = (file: File) => {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Format non supporté. Utilise PNG, JPEG ou WEBP.';
+    }
+
+    if (file.size > maxSize) {
+      return 'Fichier trop volumineux (5 Mo maximum).';
+    }
+
+    return null;
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validationError = validateAvatar(file);
+    if (validationError) {
+      setAvatarError(validationError);
+      setUploadMessage('');
+      return;
+    }
+
+    setAvatarError(null);
+    setAvatarName(file.name);
+    setUploadMessage('Avatar prêt à être envoyé.');
   };
 
   return (
@@ -74,6 +108,42 @@ const ProfilePage: React.FC = () => {
               >
                 Modifier le profil
               </Button>
+              <Box sx={{ mt: 3, textAlign: 'left' }}>
+                <Typography component="label" htmlFor="avatar-upload" fontWeight={600}>
+                  Mettre à jour l'avatar
+                </Typography>
+                <input
+                  id="avatar-upload"
+                  name="avatar"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleAvatarChange}
+                  aria-describedby="avatar-error"
+                  style={{ marginTop: 8 }}
+                />
+                {avatarName && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Fichier sélectionné : {avatarName}
+                  </Typography>
+                )}
+                {avatarError && (
+                  <Typography
+                    id="avatar-error"
+                    role="alert"
+                    aria-live="assertive"
+                    color="error"
+                    variant="body2"
+                    sx={{ mt: 1 }}
+                  >
+                    {avatarError}
+                  </Typography>
+                )}
+                {uploadMessage && !avatarError && (
+                  <Typography color="success.main" variant="body2" sx={{ mt: 1 }}>
+                    {uploadMessage}
+                  </Typography>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>

@@ -124,6 +124,16 @@ export interface UpdateResourceDTO {
   tags?: string[];
 }
 
+export interface UploadMetadata {
+  url: string;
+  key: string;
+  size: number;
+  contentType: string;
+  width?: number;
+  height?: number;
+  provider: string;
+}
+
 // ============ Message Types ============
 export interface SendMessageDTO {
   senderId: string;

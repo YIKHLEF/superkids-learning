@@ -27,7 +27,7 @@ export const register = async (req: Request, res: Response) => {
     };
 
     // Génération du token JWT
-    const token = jwt.sign(
+    const token = (jwt as any).sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -82,7 +82,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Génération du token
-    const token = jwt.sign(
+    const token = (jwt as any).sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -103,14 +103,14 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (_req: Request, res: Response) => {
   res.json({
     status: 'success',
     message: 'Déconnexion réussie',
   });
 };
 
-export const getCurrentUser = async (req: Request, res: Response) => {
+export const getCurrentUser = async (_req: Request, res: Response) => {
   // À implémenter avec middleware d'authentification
   res.json({
     status: 'success',

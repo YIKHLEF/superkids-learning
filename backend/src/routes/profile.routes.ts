@@ -4,9 +4,41 @@ import {
   updateProfile,
   updatePreferences,
   getChildProfiles,
+  uploadAvatar,
 } from '../controllers/profile.controller';
+import { uploadAvatarMiddleware } from '../middleware/secureUpload';
 
 const router = Router();
+
+/**
+ * @openapi
+ * /api/profiles/children/all:
+ *   get:
+ *     tags:
+ *       - Profiles
+ *     summary: Obtenir tous les profils enfants
+ *     description: Récupère la liste de tous les profils enfants (pour parents/éducateurs)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des profils enfants
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ChildProfile'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.get('/children/all', getChildProfiles);
 
 /**
  * @openapi
@@ -191,34 +223,6 @@ router.put('/:id', updateProfile);
  */
 router.patch('/:id/preferences', updatePreferences);
 
-/**
- * @openapi
- * /api/profiles/children/all:
- *   get:
- *     tags:
- *       - Profiles
- *     summary: Obtenir tous les profils enfants
- *     description: Récupère la liste de tous les profils enfants (pour parents/éducateurs)
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Liste des profils enfants
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ChildProfile'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- */
-router.get('/children/all', getChildProfiles);
+router.post('/:id/avatar', uploadAvatarMiddleware, uploadAvatar);
 
 export default router;

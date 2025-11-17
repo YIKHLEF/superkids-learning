@@ -4,7 +4,9 @@ import {
   getResourcesByType,
   getResourceById,
   searchResources,
+  uploadResourceAsset,
 } from '../controllers/resource.controller';
+import { uploadResourceMiddleware } from '../middleware/secureUpload';
 
 const router = Router();
 
@@ -212,5 +214,7 @@ router.get('/search', searchResources);
  *         $ref: '#/components/responses/NotFound'
  */
 router.get('/:id', getResourceById);
+
+router.post('/upload', uploadResourceMiddleware, uploadResourceAsset);
 
 export default router;

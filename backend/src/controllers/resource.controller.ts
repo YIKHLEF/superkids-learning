@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { ServiceFactory } from '../services';
 
-export const getAllResources = async (req: Request, res: Response) => {
+export const getAllResources = async (_req: Request, res: Response) => {
   res.json({
     status: 'success',
     data: {
@@ -59,4 +60,24 @@ export const searchResources = async (req: Request, res: Response) => {
       query,
     },
   });
+};
+
+export const uploadResourceAsset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const service = ServiceFactory.getResourceService();
+    const { resource, metadata } = await service.uploadResourceAsset(req.file, req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'Ressource importée avec succès',
+      data: resource,
+      metadata,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

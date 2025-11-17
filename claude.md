@@ -3144,10 +3144,13 @@ Propriétaire - Tous droits réservés
     - Payload size limit (10MB)
     - Memory monitoring
     - Stats collector
-- 🚧 **Phase 3.5**: Gestion de Fichiers (prochaine étape)
+- 🚧 **Phase 3.5**: Gestion de Fichiers - EN COURS
+  - **Upload sécurisé**: Multer en mémoire, filtrage MIME/taille configurable, compression Sharp → WebP
+  - **Stockage multi-cloud**: client unifié S3 / Azure Blob / local (chemins cohérents, métadonnées largeur/hauteur)
+  - **API & Front**: endpoints avatar/ressource exposés, services persistants, formulaires accessibles avec validations côté client + tests UI
 - 🚧 **Phase 3.6**: Pipeline CI/CD
 - 🚧 **Phase 3.9**: Activités Interactives Spécifiques
 
-**Dernière mise à jour**: 16 Novembre 2025
+**Dernière mise à jour**: 17 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
 **Statut**: Phases 3.1-3.4, 3.7 & 3.8 complétées - Sécurité + Performance Production-Ready !

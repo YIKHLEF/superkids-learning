@@ -37,6 +37,9 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 const ResourcesPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const videos = [
     {
@@ -68,6 +71,44 @@ const ResourcesPage: React.FC = () => {
     { id: '3', name: 'Aliments', count: 36, category: 'Vocabulaire' },
     { id: '4', name: 'Actions', count: 20, category: 'Verbes' },
   ];
+
+  const validateResourceFile = (file: File) => {
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'application/pdf',
+      'video/mp4',
+      'video/webm',
+    ];
+    const maxSize = 10 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Format non supporté. Ajoute une image, un PDF ou une vidéo mp4/webm.';
+    }
+
+    if (file.size > maxSize) {
+      return 'Fichier trop volumineux (10 Mo maximum).';
+    }
+
+    return null;
+  };
+
+  const handleResourceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validationError = validateResourceFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      setUploadStatus('');
+      return;
+    }
+
+    setUploadError(null);
+    setSelectedFile(file.name);
+    setUploadStatus('Fichier validé et prêt à être envoyé.');
+  };
 
   const socialStories = [
     {
@@ -134,6 +175,38 @@ const ResourcesPage: React.FC = () => {
           ),
         }}
       />
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { md: 'center' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Typography fontWeight={600}>Ajouter une nouvelle ressource</Typography>
+        <input
+          aria-describedby="resource-upload-feedback"
+          type="file"
+          name="resource"
+          onChange={handleResourceUpload}
+          accept="image/png,image/jpeg,image/webp,application/pdf,video/mp4,video/webm"
+        />
+        {selectedFile && !uploadError && (
+          <Chip label={`Sélectionné : ${selectedFile}`} color="success" />
+        )}
+      </Box>
+      <Box id="resource-upload-feedback" aria-live="assertive" sx={{ mb: 2 }}>
+        {uploadError && (
+          <Typography color="error" role="alert">
+            {uploadError}
+          </Typography>
+        )}
+        {uploadStatus && !uploadError && (
+          <Typography color="success.main">{uploadStatus}</Typography>
+        )}
+      </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
