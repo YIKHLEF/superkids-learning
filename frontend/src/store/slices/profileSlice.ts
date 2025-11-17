@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ChildProfile, SensoryPreference } from '../../types';
+import { ChildProfile, IEPGoal, SensoryPreference, UserRole } from '../../types';
 
 interface ProfileState {
   currentProfile: ChildProfile | null;
@@ -41,6 +41,16 @@ const profileSlice = createSlice({
         state.currentProfile.sensoryPreferences = action.payload;
       }
     },
+    updateIepGoals: (state, action: PayloadAction<IEPGoal[]>) => {
+      if (state.currentProfile) {
+        state.currentProfile.iepGoals = action.payload;
+      }
+    },
+    updateRoles: (state, action: PayloadAction<UserRole[]>) => {
+      if (state.currentProfile) {
+        state.currentProfile.roles = action.payload;
+      }
+    },
     togglePreference: (state, action: PayloadAction<ToggleablePreferenceKey>) => {
       if (state.currentProfile) {
         const key = action.payload;
@@ -63,6 +73,8 @@ export const {
   updateProfile,
   setProfiles,
   updateSensoryPreferences,
+  updateIepGoals,
+  updateRoles,
   togglePreference,
   setLoading,
   setError,

@@ -64,7 +64,8 @@ model ChildProfile {
   avatarUrl             String?
   sensoryPreferences    SensoryPreference[]
   developmentLevel      String
-  iepGoals              String[]
+  iepGoals              Json               @default("[]")
+  roles                 UserRole[]         @default([])
 
   // Préférences
   soundEnabled          Boolean             @default(true)
