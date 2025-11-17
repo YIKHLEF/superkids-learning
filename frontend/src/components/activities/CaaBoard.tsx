@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Chip, Typography, Stack, Alert, Button } from '@mui/material';
-import { ActivityReward } from '../../types';
+import { ActivityReward, DifficultyLevel } from '../../types';
+import analyticsService from '../../services/analytics.service';
 
 interface CaaBoardProps {
   onMessageBuilt?: (message: string) => void;
@@ -8,6 +9,8 @@ interface CaaBoardProps {
 }
 
 const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
+  const childId = 'demo-child';
+  const difficulty = DifficultyLevel.BEGINNER;
   const tiles = useMemo(
     () => [
       { icon: '🧑‍🤝‍🧑', label: 'Je veux' },
@@ -23,10 +26,29 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
   const [sentence, setSentence] = useState<string[]>(['Je veux']);
   const [celebrated, setCelebrated] = useState(false);
 
+  useEffect(() => {
+    analyticsService.sendEvent({
+      activityId: 'aac-board',
+      childId,
+      type: 'activity_start',
+      timestamp: new Date().toISOString(),
+      difficulty,
+    });
+  }, [childId, difficulty]);
+
   const addTile = (label: string) => {
     const updated = [...sentence, label];
     setSentence(updated);
     onMessageBuilt?.(updated.join(' '));
+
+    analyticsService.sendEvent({
+      activityId: 'aac-board',
+      childId,
+      type: 'attempt',
+      timestamp: new Date().toISOString(),
+      difficulty,
+      attempts: updated.length,
+    });
 
     if (updated.length >= 4 && !celebrated) {
       onSuccess?.({
@@ -34,6 +56,15 @@ const CaaBoard: React.FC<CaaBoardProps> = ({ onMessageBuilt, onSuccess }) => {
         tokens: 15,
         badgeId: 'badge_communicateur',
         message: 'Message complet envoyé !',
+      });
+      analyticsService.sendEvent({
+        activityId: 'aac-board',
+        childId,
+        type: 'success',
+        timestamp: new Date().toISOString(),
+        difficulty,
+        attempts: updated.length,
+        successRate: 1,
       });
       setCelebrated(true);
     }

@@ -97,6 +97,19 @@ export interface ActivityRewardPayload {
   avatarId?: string;
 }
 
+export interface ActivityEventPayload {
+  activityId: string;
+  childId: string;
+  type: 'activity_start' | 'activity_end' | 'attempt' | 'success' | 'emotion';
+  timestamp: string;
+  difficulty: DifficultyLevel;
+  attempts?: number;
+  successRate?: number;
+  emotionalState?: string;
+  durationSeconds?: number;
+  metadata?: Record<string, unknown>;
+}
+
 export interface DateRange {
   startDate: Date;
   endDate: Date;

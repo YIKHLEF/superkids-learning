@@ -4,6 +4,8 @@ import {
   updateProgress,
   getRewards,
   unlockReward,
+  recordProgressEvent,
+  listProgressEvents,
 } from '../controllers/progress.controller';
 
 const router = Router();
@@ -219,5 +221,8 @@ router.get('/:childId/rewards', getRewards);
  *         $ref: '#/components/responses/NotFound'
  */
 router.post('/:childId/rewards/:rewardId/unlock', unlockReward);
+
+router.post('/events', recordProgressEvent);
+router.get('/events', listProgressEvents);
 
 export default router;

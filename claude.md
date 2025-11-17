@@ -153,6 +153,10 @@ superkids-learning/
 - Frontend : hook `frontend/src/hooks/useAdaptiveLevel.ts` pour consommer les recommandations et ajuster la difficulté des activités, avec fallback local si l'API n'est pas disponible.
 - Données d'entrée typiques : taux de réussite, nombre d'essais, signaux émotionnels légers, préférences sensorielles pour éviter la surcharge.
 
+### Télémétrie des activités (nouveau)
+- Le frontend envoie désormais les événements de démarrage, d'essais, de réussite et d'état émotionnel via `frontend/src/services/analytics.service.ts`.
+- Le backend expose `/api/progress/events` pour collecter et agréger ces événements, enrichissant `ActivitySession` et `Progress` avec la durée, les essais, le taux de réussite et l'état émotionnel dominant.
+
 ### Module 3: Système de Récompenses et Motivation
 **Objectif**: Encourager l'engagement et célébrer les progrès
 

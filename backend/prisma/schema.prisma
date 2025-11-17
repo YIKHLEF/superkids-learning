@@ -122,6 +122,7 @@ model ActivitySession {
   supportLevel      String      @default("none") // none, minimal, moderate, full
   emotionalState    String?     // happy, neutral, frustrated, anxious
   notes             String?
+  durationSeconds   Int         @default(0)
 
   @@map("activity_sessions")
 }
@@ -138,6 +139,10 @@ model Progress {
   longestStreak             Int          @default(0)
   lastActivityDate          DateTime?
   rewardsUnlocked           String[]
+  totalDurationSeconds      Int          @default(0)
+  totalAttempts             Int          @default(0)
+  averageSuccessRate        Float        @default(0)
+  dominantEmotionalState    String?
 
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt

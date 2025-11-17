@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { DifficultyLevel } from '../../types';
 import { ActivityReward } from '../../types';
+import analyticsService from '../../services/analytics.service';
 
 interface AdaptiveMathGameProps {
   initialDifficulty?: DifficultyLevel;
@@ -24,10 +25,21 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
   onLevelChange,
   onSuccess,
 }) => {
+  const childId = 'demo-child';
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
   const [progress, setProgress] = useState(30);
   const [feedback, setFeedback] = useState('Réponds correctement pour débloquer le niveau supérieur.');
   const [celebrated, setCelebrated] = useState(false);
+
+  useEffect(() => {
+    analyticsService.sendEvent({
+      activityId: 'adaptive-math',
+      childId,
+      type: 'activity_start',
+      timestamp: new Date().toISOString(),
+      difficulty,
+    });
+  }, [childId, difficulty]);
 
   const mathPrompts = useMemo(
     () => ({
@@ -56,6 +68,16 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
         ? `Bravo ! Passons au niveau ${nextLevel.toLowerCase()}.`
         : 'On simplifie un peu pour consolider les bases.'
     );
+
+    analyticsService.sendEvent({
+      activityId: 'adaptive-math',
+      childId,
+      type: success ? 'success' : 'attempt',
+      timestamp: new Date().toISOString(),
+      difficulty: nextLevel,
+      attempts: 1,
+      successRate: success ? 1 : 0,
+    });
 
     if (success && newProgress >= 80 && !celebrated) {
       onSuccess?.({
