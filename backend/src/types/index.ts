@@ -165,6 +165,13 @@ export interface MlAdaptiveResponse {
   confidence?: number;
 }
 
+export type RecommendationSource = 'ml' | 'heuristic';
+
+export interface AdaptiveEngineResult {
+  recommendation: AdaptiveRecommendation;
+  source: RecommendationSource;
+}
+
 // ============ Resource Types ============
 export interface ResourceFilters {
   type?: string;

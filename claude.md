@@ -154,9 +154,9 @@ superkids-learning/
 - Catalogue d'activités annoté avec des tags EBP (Evidence-Based Practices) filtrables côté frontend et exposés via l'API `/api/activities`.
 
 ## Moteur Adaptatif (nouveau)
-- Backend : `backend/src/services/adaptive.service.ts` expose une API interne d'« Adaptive Engine » combinant heuristique explicable et connecteur ML optionnel (configurable via `ADAPTIVE_ML_ENABLED`, `ADAPTIVE_ML_ENDPOINT`, `ADAPTIVE_ML_API_KEY`).
-- Endpoint dédié : `POST /api/adaptive/recommendations` (contrôleur `backend/src/controllers/adaptive.controller.ts`, routes `backend/src/routes/adaptive.routes.ts`, documenté dans Swagger) accepte scores/essais/signaux émotionnels/préférences sensorielles et renvoie les recommandations.
-- Frontend : hook `frontend/src/hooks/useAdaptiveLevel.ts` pour consommer les recommandations et ajuster la difficulté des activités, avec fallback local si l'API n'est pas disponible.
+- Backend : `backend/src/services/adaptive.service.ts` orchestre désormais la bascule ML/heuristique (journalisation de la provenance) et persiste chaque recommandation dans la table Prisma `AdaptiveRecommendation` pour l'audit et l'affinage.
+- Endpoint dédié : `POST /api/adaptive/recommendations` (contrôleur `backend/src/controllers/adaptive.controller.ts`, routes `backend/src/routes/adaptive.routes.ts`) est validé par Zod (`adaptiveContextSchema`) incluant performances, émotions et préférences sensorielles.
+- Frontend : hook `frontend/src/hooks/useAdaptiveLevel.ts` consomme la provenance (ML vs heuristique), mémoïse les recommandations récentes et assure un fallback heuristique local en cas d'erreur ou hors-ligne.
 - Données d'entrée typiques : taux de réussite, nombre d'essais, signaux émotionnels légers, préférences sensorielles pour éviter la surcharge.
 
 ### Télémétrie des activités (nouveau)

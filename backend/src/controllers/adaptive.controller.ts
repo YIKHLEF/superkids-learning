@@ -45,13 +45,13 @@ export const getAdaptiveRecommendations = async (req: Request, res: Response) =>
   const adaptiveService = ServiceFactory.getAdaptiveService();
 
   try {
-    const recommendation = await adaptiveService.getRecommendations(context);
+    const { recommendation, source } = await adaptiveService.getRecommendations(context);
 
     res.json({
       status: 'success',
       data: {
         recommendation,
-        source: adaptiveService.isMlActive() ? 'ml' : 'heuristic',
+        source,
       },
     });
   } catch (error) {

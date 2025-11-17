@@ -308,12 +308,22 @@ const ActivitiesPage: React.FC = () => {
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <Chip
-            color={source === 'remote' ? 'primary' : source === 'fallback' ? 'warning' : 'default'}
+            color={
+              source === 'ml'
+                ? 'primary'
+                : source === 'heuristic'
+                ? 'success'
+                : source === 'fallback'
+                ? 'warning'
+                : 'default'
+            }
             label={
               loading
                 ? 'Suggestion en cours...'
-                : source === 'remote'
+                : source === 'ml'
                 ? 'Suggestion ML/Backend'
+                : source === 'heuristic'
+                ? 'Suggestion heuristique backend'
                 : source === 'fallback'
                 ? 'Heuristique locale'
                 : 'Suggestion par défaut'

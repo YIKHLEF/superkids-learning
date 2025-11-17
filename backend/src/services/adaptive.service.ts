@@ -1,10 +1,12 @@
-import { ActivityCategory, DifficultyLevel } from '@prisma/client';
+import { ActivityCategory, DifficultyLevel, PrismaClient } from '@prisma/client';
 import {
   AdaptiveContext,
   AdaptiveRecommendation,
   ActivityRecommendation,
+  AdaptiveEngineResult,
   MlAdaptiveResponse,
   PerformanceSignal,
+  RecommendationSource,
 } from '../types';
 import { logger } from '../utils/logger';
 
@@ -12,6 +14,7 @@ interface AdaptiveServiceOptions {
   mlEndpoint?: string;
   mlApiKey?: string;
   mlEnabled?: boolean;
+  prisma?: PrismaClient;
 }
 
 /**
@@ -25,11 +28,13 @@ export class AdaptiveService {
   private readonly mlEndpoint?: string;
   private readonly mlApiKey?: string;
   private readonly mlEnabled: boolean;
+  private readonly prisma?: PrismaClient;
 
   constructor(options: AdaptiveServiceOptions = {}) {
     this.mlEndpoint = options.mlEndpoint || process.env.ADAPTIVE_ML_ENDPOINT;
     this.mlApiKey = options.mlApiKey || process.env.ADAPTIVE_ML_API_KEY;
     this.mlEnabled = options.mlEnabled ?? process.env.ADAPTIVE_ML_ENABLED === 'true';
+    this.prisma = options.prisma;
   }
 
   isMlActive(): boolean {
@@ -40,17 +45,38 @@ export class AdaptiveService {
    * Orchestration: tente d'appeler le modèle ML si activé, sinon
    * applique le modèle heuristique interne.
    */
-  async getRecommendations(context: AdaptiveContext): Promise<AdaptiveRecommendation> {
-    if (this.mlEnabled && this.mlEndpoint) {
+  async getRecommendations(context: AdaptiveContext): Promise<AdaptiveEngineResult> {
+    const start = Date.now();
+    let source: RecommendationSource = 'heuristic';
+    let recommendation: AdaptiveRecommendation | undefined;
+
+    if (this.isMlActive()) {
       try {
         const mlResponse = await this.fetchMlRecommendation(context);
-        return this.normalizeMlResponse(mlResponse, context.childId);
+        recommendation = this.normalizeMlResponse(mlResponse, context.childId);
+        source = 'ml';
+        logger.info('Recommandations générées via le connecteur ML', {
+          childId: context.childId,
+          endpoint: this.mlEndpoint,
+        });
       } catch (error) {
-        logger.warn('Échec du connecteur ML, utilisation des heuristiques internes', { error });
+        logger.warn('Échec du connecteur ML, utilisation des heuristiques internes', {
+          error,
+          childId: context.childId,
+        });
       }
     }
 
-    return this.generateHeuristicRecommendation(context);
+    if (!recommendation) {
+      recommendation = this.generateHeuristicRecommendation(context);
+      source = 'heuristic';
+      logger.info('Recommandations générées via l’heuristique locale', { childId: context.childId });
+    }
+
+    const latencyMs = Date.now() - start;
+    await this.persistRecommendation(context, recommendation, source, latencyMs);
+
+    return { recommendation, source };
   }
 
   /**
@@ -221,5 +247,32 @@ export class AdaptiveService {
       recommendations: mlResponse.recommendations,
       rationale: mlResponse.explanation || ['Connecteur ML activé'],
     };
+  }
+
+  private async persistRecommendation(
+    context: AdaptiveContext,
+    recommendation: AdaptiveRecommendation,
+    source: RecommendationSource,
+    latencyMs?: number
+  ) {
+    const prisma = this.prisma as any;
+    if (!prisma?.adaptiveRecommendation) return;
+
+    try {
+      await prisma.adaptiveRecommendation.create({
+        data: {
+          childId: context.childId,
+          source,
+          requestedContext: context,
+          recommendation,
+          latencyMs,
+        },
+      });
+    } catch (error) {
+      logger.warn('Échec de la persistance des recommandations adaptatives', {
+        error,
+        childId: context.childId,
+      });
+    }
   }
 }

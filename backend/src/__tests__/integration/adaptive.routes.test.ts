@@ -8,7 +8,7 @@ import { ActivityCategory, DifficultyLevel } from '@prisma/client';
 describe('Adaptive routes', () => {
   let app: Application;
   const context: AdaptiveContext = {
-    childId: 'child-123',
+    childId: '22222222-2222-2222-2222-222222222222',
     targetCategory: ActivityCategory.SOCIAL_SKILLS,
     currentDifficulty: DifficultyLevel.BEGINNER,
     recentPerformance: [{ successRate: 0.6, attemptsCount: 3 }],
@@ -26,10 +26,13 @@ describe('Adaptive routes', () => {
 
   it('should return adaptive recommendation', async () => {
     jest.spyOn(AdaptiveService.prototype, 'getRecommendations').mockResolvedValue({
-      childId: context.childId,
-      nextDifficulty: 'INTERMEDIATE' as any,
-      recommendations: [],
-      rationale: ['test'],
+      recommendation: {
+        childId: context.childId,
+        nextDifficulty: 'INTERMEDIATE' as any,
+        recommendations: [],
+        rationale: ['test'],
+      },
+      source: 'heuristic',
     });
 
     const response = await request(app)
@@ -39,7 +42,7 @@ describe('Adaptive routes', () => {
 
     expect(response.body.status).toBe('success');
     expect(response.body.data.recommendation.nextDifficulty).toBe('INTERMEDIATE');
-    expect(response.body.data.source).toBeDefined();
+    expect(response.body.data.source).toBe('heuristic');
   });
 
   it('should handle service errors', async () => {
@@ -51,5 +54,16 @@ describe('Adaptive routes', () => {
       .expect(500);
 
     expect(response.body.status).toBe('error');
+  });
+
+  it('should validate payloads and reject malformed requests', async () => {
+    const invalidPayload = { ...context, recentPerformance: [] };
+
+    const response = await request(app)
+      .post('/api/adaptive/recommendations')
+      .send(invalidPayload)
+      .expect(400);
+
+    expect(response.body.message).toBe('Validation échouée');
   });
 });

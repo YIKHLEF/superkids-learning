@@ -112,7 +112,7 @@ export class ServiceFactory {
    */
   static getAdaptiveService(): AdaptiveService {
     if (!this.adaptiveService) {
-      this.adaptiveService = new AdaptiveService();
+      this.adaptiveService = new AdaptiveService({ prisma: this.prisma });
     }
     return this.adaptiveService;
   }
