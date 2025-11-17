@@ -333,6 +333,22 @@ Les tests sont exécutés automatiquement sur chaque push et PR via GitHub Actio
 5. Vérification de la couverture
 6. Build
 
+## Scans automatisés
+
+Un scan ZAP baseline est automatisé pour détecter rapidement les vulnérabilités les plus critiques de l'API.
+
+- **Workflow** : `Security - ZAP Baseline` (GitHub Actions) déclenché manuellement (`workflow_dispatch`) ou chaque lundi à 03:00 UTC.
+- **Port cible** : l'API est construite puis démarrée localement sur `http://localhost:5000` avant le scan.
+- **Rapports** : un rapport HTML et un JSON sont publiés comme artefacts `zap-baseline-report`.
+- **Seuil d'échec** : l'entrée `fail_on` (par défaut `high`) permet de faire échouer la CI quand une alerte de sévérité égale ou supérieure est trouvée (High/Critical). Le résumé des alertes est écrit dans les logs.
+- **Secrets optionnels** : `ZAP_DATABASE_URL` et `ZAP_JWT_SECRET` peuvent être fournis pour ajuster la configuration de démarrage de l'API.
+
+Pour lancer manuellement :
+1. Aller dans **Actions** → **Security - ZAP Baseline** → **Run workflow**.
+2. Renseigner si besoin `fail_on` (`info`, `low`, `medium`, `high`, `critical`).
+3. Télécharger l'artefact `zap-baseline-report` pour analyser les détails.
+
+
 ## Prochaines Étapes
 
 ### À Implémenter

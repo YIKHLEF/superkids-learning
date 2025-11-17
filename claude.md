@@ -3159,3 +3159,9 @@ Propriétaire - Tous droits réservés
 **Dernière mise à jour**: 18 Novembre 2025
 **Version Actuelle**: 1.1.0-dev
 **Statut**: Phases 3.1-3.4, 3.6-3.8 complétées - Sécurité + Performance + CI/CD/Monitoring prêts prod !
+
+## Scans de sécurité automatisés
+
+- Un workflow GitHub Actions `Security - ZAP Baseline` démarre l'API locale sur le port 5000, lance le scan ZAP baseline et publie les rapports HTML/JSON comme artefacts.
+- L'entrée `fail_on` (par défaut `high`) permet de contrôler le seuil d'échec, avec un résumé des alertes injecté dans les logs CI.
+- Les secrets `ZAP_DATABASE_URL` et `ZAP_JWT_SECRET` peuvent être fournis pour ajuster l'environnement de démarrage pendant le scan.

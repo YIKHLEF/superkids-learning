@@ -1,0 +1,149 @@
+name: Security - ZAP Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      fail_on:
+        description: "Seuil de sévérité déclenchant l'échec (info|low|medium|high|critical)"
+        required: false
+        default: "high"
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  zap-baseline:
+    name: ZAP baseline contre l'API locale
+    runs-on: ubuntu-latest
+    env:
+      PORT: 5000
+      ZAP_FAIL_ON: ${{ github.event.inputs.fail_on || 'high' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: backend
+
+      - name: Start API in background
+        working-directory: backend
+        env:
+          PORT: ${{ env.PORT }}
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.ZAP_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
+          JWT_SECRET: ${{ secrets.ZAP_JWT_SECRET || 'zap-baseline-secret' }}
+        run: |
+          PORT=${PORT:-5000} NODE_ENV=${NODE_ENV:-test} DATABASE_URL=${DATABASE_URL} JWT_SECRET=${JWT_SECRET} nohup npm start >/tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+
+      - name: Wait for API readiness
+        run: |
+          for i in {1..30}; do
+            if curl -sSf "http://localhost:${PORT}/health" >/dev/null; then
+              echo "API is reachable"
+              exit 0
+            fi
+            echo "Waiting for API to start (${i}/30)..."
+            sleep 5
+          done
+          echo "API failed to start"
+          cat /tmp/api.log || true
+          exit 1
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: http://localhost:5000
+          cmd_options: '-a -m 5 -r zap-report.html -J zap-report.json'
+          fail_action: false
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f /tmp/api.pid ]; then
+            kill $(cat /tmp/api.pid) || true
+            rm /tmp/api.pid
+          fi
+          if [ -f /tmp/api.log ]; then
+            echo "--- API logs (tail) ---"
+            tail -n 80 /tmp/api.log || true
+          fi
+
+      - name: Summarize ZAP alerts
+        id: zap-summary
+        run: |
+          REPORT="zap-report.json"
+          if [ ! -f "$REPORT" ]; then
+            echo "ZAP report not found"
+            exit 1
+          fi
+
+          high=$(jq '[..|objects|select(.risk=="High" or .risk=="Critical")]|length' "$REPORT")
+          medium=$(jq '[..|objects|select(.risk=="Medium")]|length' "$REPORT")
+          low=$(jq '[..|objects|select(.risk=="Low")]|length' "$REPORT")
+          info=$(jq '[..|objects|select(.risk=="Informational")]|length' "$REPORT")
+
+          echo "High/Critical: $high"
+          echo "Medium: $medium"
+          echo "Low: $low"
+          echo "Informational: $info"
+
+          echo "high_count=$high" >> "$GITHUB_OUTPUT"
+          echo "medium_count=$medium" >> "$GITHUB_OUTPUT"
+          echo "low_count=$low" >> "$GITHUB_OUTPUT"
+          echo "info_count=$info" >> "$GITHUB_OUTPUT"
+
+          fail_on=$(echo "${ZAP_FAIL_ON:-high}" | tr '[:upper:]' '[:lower:]')
+          case "$fail_on" in
+            critical) threshold=4 ;;
+            high) threshold=3 ;;
+            medium) threshold=2 ;;
+            low) threshold=1 ;;
+            info|informational) threshold=0 ;;
+            *) echo "Unknown fail_on level '$fail_on'"; exit 1 ;;
+          esac
+
+          highest=$(jq '[..|objects|select(.risk?)|.risk|strings|            if .=="Informational" then 0 elif .=="Low" then 1 elif .=="Medium" then 2 elif .=="High" then 3 elif .=="Critical" then 4 else 0 end] | max // 0' "$REPORT")
+
+          echo "highest=$highest" >> "$GITHUB_OUTPUT"
+          echo "threshold=$threshold" >> "$GITHUB_OUTPUT"
+
+          echo "::notice::ZAP alerts summary - High/Critical: ${high}, Medium: ${medium}, Low: ${low}, Informational: ${info}. Fail on: ${fail_on}."
+
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: |
+            zap-report.html
+            zap-report.json
+
+      - name: Enforce fail-on threshold
+        run: |
+          highest=${{ steps.zap-summary.outputs.highest }}
+          threshold=${{ steps.zap-summary.outputs.threshold }}
+          fail_on=${{ github.event.inputs.fail_on || 'high' }}
+
+          if [ -z "$highest" ] || [ -z "$threshold" ]; then
+            echo "Missing ZAP summary outputs"
+            exit 1
+          fi
+
+          if [ "$highest" -ge "$threshold" ] && [ "$highest" -gt 0 ]; then
+            echo "ZAP alerts found at or above the fail-on threshold (${fail_on})."
+            exit 2
+          else
+            echo "No ZAP alerts at or above the fail-on threshold (${fail_on})."
+          fi
