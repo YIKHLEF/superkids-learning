@@ -11,6 +11,7 @@ export { ActivityService } from './activity.service';
 export { ProgressService } from './progress.service';
 export { ResourceService } from './resource.service';
 export { MessageService } from './message.service';
+export { AdaptiveService } from './adaptive.service';
 
 import { PrismaClient } from '@prisma/client';
 import { AuthService } from './auth.service';
@@ -19,6 +20,7 @@ import { ActivityService } from './activity.service';
 import { ProgressService } from './progress.service';
 import { ResourceService } from './resource.service';
 import { MessageService } from './message.service';
+import { AdaptiveService } from './adaptive.service';
 
 /**
  * Factory pour créer toutes les instances de services
@@ -33,6 +35,7 @@ export class ServiceFactory {
   private static progressService: ProgressService;
   private static resourceService: ResourceService;
   private static messageService: MessageService;
+  private static adaptiveService: AdaptiveService;
 
   /**
    * Initialiser la factory avec une instance Prisma
@@ -102,6 +105,16 @@ export class ServiceFactory {
   }
 
   /**
+   * Obtenir l'instance du service adaptatif
+   */
+  static getAdaptiveService(): AdaptiveService {
+    if (!this.adaptiveService) {
+      this.adaptiveService = new AdaptiveService();
+    }
+    return this.adaptiveService;
+  }
+
+  /**
    * Réinitialiser toutes les instances (utile pour les tests)
    */
   static reset() {
@@ -111,5 +124,6 @@ export class ServiceFactory {
     this.progressService = null as any;
     this.resourceService = null as any;
     this.messageService = null as any;
+    this.adaptiveService = null as any;
   }
 }

@@ -145,6 +145,11 @@ superkids-learning/
 - Séquences d'autonomie (checklist guidée)
 - Exercices de respiration (rituel 4-2-4)
 
+## Moteur Adaptatif (nouveau)
+- Backend : `backend/src/services/adaptive.service.ts` expose une API interne d'« Adaptive Engine » combinant heuristique explicable et connecteur ML optionnel (configurable via `ADAPTIVE_ML_ENABLED`, `ADAPTIVE_ML_ENDPOINT`, `ADAPTIVE_ML_API_KEY`).
+- Frontend : hook `frontend/src/hooks/useAdaptiveLevel.ts` pour consommer les recommandations et ajuster la difficulté des activités, avec fallback local si l'API n'est pas disponible.
+- Données d'entrée typiques : taux de réussite, nombre d'essais, signaux émotionnels légers, préférences sensorielles pour éviter la surcharge.
+
 ### Module 3: Système de Récompenses et Motivation
 **Objectif**: Encourager l'engagement et célébrer les progrès
 

@@ -125,6 +125,44 @@ export interface AnalyticsData {
   recommendations: string[];
 }
 
+// Adaptation et recommandations
+export interface PerformanceSignal {
+  successRate: number;
+  attemptsCount: number;
+  averageTimePerQuestion?: number;
+  emotionalState?: string;
+  supportLevel?: 'none' | 'minimal' | 'moderate' | 'full';
+}
+
+export interface AdaptiveContext {
+  childId: string;
+  targetCategory: ActivityCategory;
+  currentDifficulty: DifficultyLevel;
+  recentPerformance: PerformanceSignal[];
+  currentActivityId?: string;
+  personalization?: {
+    prefersLowStimuli?: boolean;
+    shortSessionsPreferred?: boolean;
+    regulationNeeded?: boolean;
+  };
+}
+
+export interface ActivityRecommendation {
+  category: ActivityCategory;
+  difficulty: DifficultyLevel;
+  weight: number;
+  reason: string;
+  suggestedActivityId?: string;
+}
+
+export interface AdaptiveRecommendation {
+  childId: string;
+  nextDifficulty: DifficultyLevel;
+  recommendations: ActivityRecommendation[];
+  rationale: string[];
+  escalationWarnings?: string[];
+}
+
 export interface Resource {
   id: string;
   title: string;
