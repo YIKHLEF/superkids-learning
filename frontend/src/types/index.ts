@@ -60,8 +60,9 @@ export interface ChildProfile extends UserProfile {
     animationsEnabled: boolean;
     dyslexiaMode: boolean;
     highContrastMode: boolean;
-    fontSize: 'small' | 'medium' | 'large';
+    fontSize: 'small' | 'medium' | 'large' | 'extra-large';
   };
+  uiPreferences?: Partial<AccessibilitySettings>;
 }
 
 export interface Activity {

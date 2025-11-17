@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -23,7 +23,13 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { RootState } from '../store';
-import { togglePreference, updateIepGoals, updateRoles, updateSensoryPreferences } from '../store/slices/profileSlice';
+import {
+  togglePreference,
+  updateIepGoals,
+  updateRoles,
+  updateSensoryPreferences,
+  updateUiPreferences,
+} from '../store/slices/profileSlice';
 import {
   toggleSetting,
   setFontSize,
@@ -31,13 +37,14 @@ import {
   setContrastLevel,
   setColorScheme,
   setGlobalVolume,
+  updateAccessibility,
 } from '../store/slices/settingsSlice';
 import { IEPGoal, SensoryPreference, UserRole } from '../types';
 
 const ProfilePage: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
-  const settings = useSelector((state: RootState) => state.settings.accessibility);
+  const accessibility = useSelector((state: RootState) => state.settings.accessibility);
   const theme = useTheme();
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarName, setAvatarName] = useState('');
@@ -46,12 +53,27 @@ const ProfilePage: React.FC = () => {
   const [newGoal, setNewGoal] = useState<IEPGoal>({
     id: crypto.randomUUID(),
     title: '',
+    description: '',
+    targetDate: '',
     status: 'not_started',
   });
   const [roles, setRoles] = useState<UserRole[]>(profile?.roles || []);
   const [sensoryPreferences, setSensoryPreferences] = useState<SensoryPreference[]>(
     profile?.sensoryPreferences || []
   );
+  const uiPreferences = profile?.uiPreferences ?? accessibility;
+
+  useEffect(() => {
+    if (profile?.uiPreferences) {
+      dispatch(updateAccessibility(profile.uiPreferences));
+    }
+  }, [dispatch, profile?.uiPreferences]);
+
+  useEffect(() => {
+    setIepGoals(profile?.iepGoals || []);
+    setRoles(profile?.roles || []);
+    setSensoryPreferences(profile?.sensoryPreferences || []);
+  }, [profile]);
 
   const fontSizeMap = {
     small: 14,
@@ -63,13 +85,17 @@ const ProfilePage: React.FC = () => {
   const handleFontSizeChange = (value: number) => {
     const sizes: Array<keyof typeof fontSizeMap> = ['small', 'medium', 'large', 'extra-large'];
     const index = Math.floor((value / 100) * (sizes.length - 1));
-    dispatch(setFontSize(sizes[index]));
+    const nextSize = sizes[index];
+    dispatch(setFontSize(nextSize));
+    dispatch(updateUiPreferences({ fontSize: nextSize }));
   };
 
   const handleContrastChange = (value: number) => {
-    const levels: Array<typeof settings.contrastLevel> = ['standard', 'high', 'maximum'];
+    const levels: Array<typeof accessibility.contrastLevel> = ['standard', 'high', 'maximum'];
     const index = Math.floor((value / 100) * (levels.length - 1));
-    dispatch(setContrastLevel(levels[index]));
+    const nextLevel = levels[index];
+    dispatch(setContrastLevel(nextLevel));
+    dispatch(updateUiPreferences({ contrastLevel: nextLevel, highContrast: nextLevel !== 'standard' }));
   };
 
   const validateAvatar = (file: File) => {
@@ -108,7 +134,7 @@ const ProfilePage: React.FC = () => {
     const updatedGoals = [...iepGoals, { ...newGoal, id: crypto.randomUUID() }];
     setIepGoals(updatedGoals);
     dispatch(updateIepGoals(updatedGoals));
-    setNewGoal({ id: crypto.randomUUID(), title: '', status: 'not_started' });
+    setNewGoal({ id: crypto.randomUUID(), title: '', description: '', targetDate: '', status: 'not_started' });
   };
 
   const handleUpdateGoal = (id: string, field: keyof IEPGoal, value: string) => {
@@ -250,8 +276,12 @@ const ProfilePage: React.FC = () => {
                     <Select
                       labelId="palette-label"
                       label="Palette neuro-inclusive"
-                      value={settings.palette}
-                      onChange={(event) => dispatch(setPalette(event.target.value as typeof settings.palette))}
+                      value={uiPreferences.palette}
+                      onChange={(event) => {
+                        const palette = event.target.value as typeof accessibility.palette;
+                        dispatch(setPalette(palette));
+                        dispatch(updateUiPreferences({ palette }));
+                      }}
                     >
                       <MenuItem value="calm">Apaisante</MenuItem>
                       <MenuItem value="vibrant">Stimulante douce</MenuItem>
@@ -264,8 +294,12 @@ const ProfilePage: React.FC = () => {
                     <Select
                       labelId="color-scheme-label"
                       label="Contraste clair/sombre"
-                      value={settings.colorScheme}
-                      onChange={(event) => dispatch(setColorScheme(event.target.value as typeof settings.colorScheme))}
+                      value={uiPreferences.colorScheme}
+                      onChange={(event) => {
+                        const colorScheme = event.target.value as typeof accessibility.colorScheme;
+                        dispatch(setColorScheme(colorScheme));
+                        dispatch(updateUiPreferences({ colorScheme }));
+                      }}
                     >
                       <MenuItem value="light">Clair</MenuItem>
                       <MenuItem value="dark">Sombre</MenuItem>
@@ -279,7 +313,7 @@ const ProfilePage: React.FC = () => {
                   <Slider
                     aria-label="Intensité du contraste"
                     value={
-                      ['standard', 'high', 'maximum'].indexOf(settings.contrastLevel) *
+                      ['standard', 'high', 'maximum'].indexOf(uiPreferences.contrastLevel) *
                       (100 / (['standard', 'high', 'maximum'].length - 1))
                     }
                     onChange={(_, value) => handleContrastChange(value as number)}
@@ -290,7 +324,7 @@ const ProfilePage: React.FC = () => {
                     sx={{ maxWidth: 360, mb: 2 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                    Niveau actuel : {settings.contrastLevel}
+                    Niveau actuel : {uiPreferences.contrastLevel}
                   </Typography>
 
                   <Typography variant="body2" sx={{ mb: 1 }}>
@@ -298,8 +332,15 @@ const ProfilePage: React.FC = () => {
                   </Typography>
                   <Slider
                     aria-label="Volume global"
-                    value={settings.globalVolume}
-                    onChange={(_, value) => dispatch(setGlobalVolume(value as number))}
+                    value={uiPreferences.globalVolume}
+                    onChange={(_, value) => {
+                      const volume = value as number;
+                      dispatch(setGlobalVolume(volume));
+                      dispatch(updateUiPreferences({
+                        globalVolume: volume,
+                        soundEnabled: volume > 0,
+                      }));
+                    }}
                     step={10}
                     marks
                     min={0}
@@ -307,9 +348,9 @@ const ProfilePage: React.FC = () => {
                     sx={{ maxWidth: 360, mb: 2 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    {settings.globalVolume === 0
+                    {uiPreferences.globalVolume === 0
                       ? 'Sons désactivés'
-                      : `Volume à ${settings.globalVolume}%`}
+                      : `Volume à ${uiPreferences.globalVolume}%`}
                   </Typography>
                 </Grid>
 
@@ -345,10 +386,17 @@ const ProfilePage: React.FC = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={profile?.preferences.soundEnabled ?? true}
+                      checked={accessibility.soundEnabled}
                       onChange={() => {
+                        const nextSoundEnabled = !accessibility.soundEnabled;
                         dispatch(togglePreference('soundEnabled'));
                         dispatch(toggleSetting('soundEnabled'));
+                        dispatch(
+                          updateUiPreferences({
+                            soundEnabled: nextSoundEnabled,
+                            globalVolume: nextSoundEnabled ? accessibility.globalVolume : 0,
+                          })
+                        );
                       }}
                     />
                   }
@@ -363,10 +411,12 @@ const ProfilePage: React.FC = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={profile?.preferences.animationsEnabled ?? true}
+                      checked={accessibility.animationsEnabled}
                       onChange={() => {
+                        const nextAnimations = !accessibility.animationsEnabled;
                         dispatch(togglePreference('animationsEnabled'));
                         dispatch(toggleSetting('animationsEnabled'));
+                        dispatch(updateUiPreferences({ animationsEnabled: nextAnimations }));
                       }}
                     />
                   }
@@ -381,10 +431,12 @@ const ProfilePage: React.FC = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={profile?.preferences.dyslexiaMode ?? false}
+                      checked={accessibility.dyslexiaFont}
                       onChange={() => {
+                        const nextDyslexia = !accessibility.dyslexiaFont;
                         dispatch(togglePreference('dyslexiaMode'));
                         dispatch(toggleSetting('dyslexiaFont'));
+                        dispatch(updateUiPreferences({ dyslexiaFont: nextDyslexia }));
                       }}
                     />
                   }
@@ -399,10 +451,17 @@ const ProfilePage: React.FC = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={profile?.preferences.highContrastMode ?? false}
+                      checked={accessibility.highContrast}
                       onChange={() => {
+                        const nextHighContrast = !accessibility.highContrast;
                         dispatch(togglePreference('highContrastMode'));
                         dispatch(toggleSetting('highContrast'));
+                        dispatch(
+                          updateUiPreferences({
+                            highContrast: nextHighContrast,
+                            contrastLevel: nextHighContrast ? 'maximum' : accessibility.contrastLevel,
+                          })
+                        );
                       }}
                     />
                   }
@@ -417,8 +476,12 @@ const ProfilePage: React.FC = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={settings.audioCuesEnabled}
-                      onChange={() => dispatch(toggleSetting('audioCuesEnabled'))}
+                      checked={accessibility.audioCuesEnabled}
+                      onChange={() => {
+                        const nextAudioCues = !accessibility.audioCuesEnabled;
+                        dispatch(toggleSetting('audioCuesEnabled'));
+                        dispatch(updateUiPreferences({ audioCuesEnabled: nextAudioCues }));
+                      }}
                     />
                   }
                   label={<Typography sx={{ fontSize: '1rem' }}>Indices audio discrets</Typography>}
@@ -435,8 +498,12 @@ const ProfilePage: React.FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.reducedMotion}
-                    onChange={() => dispatch(toggleSetting('reducedMotion'))}
+                    checked={accessibility.reducedMotion}
+                    onChange={() => {
+                      const nextReducedMotion = !accessibility.reducedMotion;
+                      dispatch(toggleSetting('reducedMotion'));
+                      dispatch(updateUiPreferences({ reducedMotion: nextReducedMotion }));
+                    }}
                   />
                 }
                 label={
@@ -450,8 +517,12 @@ const ProfilePage: React.FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.autoRead}
-                    onChange={() => dispatch(toggleSetting('autoRead'))}
+                    checked={accessibility.autoRead}
+                    onChange={() => {
+                      const nextAutoRead = !accessibility.autoRead;
+                      dispatch(toggleSetting('autoRead'));
+                      dispatch(updateUiPreferences({ autoRead: nextAutoRead }));
+                    }}
                   />
                 }
                 label={
@@ -467,7 +538,7 @@ const ProfilePage: React.FC = () => {
               </Typography>
               <Slider
                 value={
-                  Object.keys(fontSizeMap).indexOf(settings.fontSize) *
+                  Object.keys(fontSizeMap).indexOf(accessibility.fontSize) *
                   (100 / (Object.keys(fontSizeMap).length - 1))
                 }
                 onChange={(_, value) => handleFontSizeChange(value as number)}
@@ -478,7 +549,7 @@ const ProfilePage: React.FC = () => {
                 sx={{ maxWidth: 400 }}
               />
               <Typography variant="caption" color="text.secondary">
-                Taille actuelle: {settings.fontSize}
+                Taille actuelle: {accessibility.fontSize}
               </Typography>
             </CardContent>
           </Card>
@@ -546,6 +617,24 @@ const ProfilePage: React.FC = () => {
                 onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
                 sx={{ mb: 2 }}
                 required
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                value={newGoal.description}
+                onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                sx={{ mb: 2 }}
+                multiline
+                minRows={2}
+              />
+              <TextField
+                fullWidth
+                label="Date cible"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={newGoal.targetDate}
+                onChange={(e) => setNewGoal({ ...newGoal, targetDate: e.target.value })}
+                sx={{ mb: 2 }}
               />
               <Button variant="contained" onClick={handleAddGoal} disabled={!newGoal.title.trim()}>
                 Ajouter

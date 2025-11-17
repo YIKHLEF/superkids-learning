@@ -51,6 +51,17 @@ const profileSlice = createSlice({
         state.currentProfile.roles = action.payload;
       }
     },
+    updateUiPreferences: (
+      state,
+      action: PayloadAction<Partial<NonNullable<ChildProfile['uiPreferences']>>>
+    ) => {
+      if (state.currentProfile) {
+        state.currentProfile.uiPreferences = {
+          ...state.currentProfile.uiPreferences,
+          ...action.payload,
+        };
+      }
+    },
     togglePreference: (state, action: PayloadAction<ToggleablePreferenceKey>) => {
       if (state.currentProfile) {
         const key = action.payload;
@@ -75,6 +86,7 @@ export const {
   updateSensoryPreferences,
   updateIepGoals,
   updateRoles,
+  updateUiPreferences,
   togglePreference,
   setLoading,
   setError,

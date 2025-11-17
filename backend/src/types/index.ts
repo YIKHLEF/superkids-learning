@@ -1,6 +1,16 @@
 // Types et DTOs pour SuperKids Learning Backend
 
 import { UserRole, ActivityCategory, DifficultyLevel, SensoryPreference } from '@prisma/client';
+import {
+  IepGoal,
+  PreferencesDTO,
+  UiPreferences,
+  UpdateProfileDTO,
+  parsePreferencesDTO,
+  parseUpdateProfileDTO,
+  updatePreferencesSchema,
+  updateProfileSchema,
+} from './profile';
 
 // ============ Auth Types ============
 export interface RegisterDTO {
@@ -23,26 +33,6 @@ export interface UserWithToken {
     role: UserRole;
   };
   token: string;
-}
-
-// ============ Profile Types ============
-export interface UpdateProfileDTO {
-  dateOfBirth?: Date;
-  avatarUrl?: string;
-  developmentLevel?: string;
-  iepGoals?: any[];
-  parentIds?: string[];
-  educatorIds?: string[];
-  roles?: UserRole[];
-  sensoryPreferences?: SensoryPreference[];
-}
-
-export interface PreferencesDTO {
-  soundEnabled?: boolean;
-  animationsEnabled?: boolean;
-  dyslexiaMode?: boolean;
-  highContrastMode?: boolean;
-  fontSize?: string;
 }
 
 // ============ Activity Types ============
@@ -250,3 +240,11 @@ export interface PaginatedResponse<T> {
     totalPages: number;
   };
 }
+
+export type { IepGoal, UiPreferences, UpdateProfileDTO, PreferencesDTO };
+export {
+  parseUpdateProfileDTO,
+  parsePreferencesDTO,
+  updatePreferencesSchema,
+  updateProfileSchema,
+};

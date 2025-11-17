@@ -99,6 +99,11 @@ superkids-learning/
 - Gestion des préférences d'interface (sons, animations, police dyslexie)
 - Gestion multi-utilisateurs (parents, éducateurs, thérapeutes)
 
+**Préférences UI et accessibilité (persistées côté profil)**
+- Le modèle Prisma `ChildProfile` porte désormais un champ `uiPreferences` (JSON) qui embarque la palette, le contraste, le schéma de couleurs, le volume global, les polices dyslexie et les indicateurs de mouvement.
+- Les objectifs IEP sont stockés sous forme structurée (`title`, `description`, `targetDate`, `status`) et validés par Zod côté backend (`backend/src/types/profile.ts`).
+- Le frontend réconcilie les préférences UI stockées avec le thème dynamique MUI via `createAppTheme` et la `ProfilePage` synchronise le store `settings` en temps réel.
+
 **Fichiers concernés**:
 - Frontend: `src/pages/ProfilePage.tsx`, `src/store/slices/profileSlice.ts`
 - Backend: `src/controllers/profile.controller.ts`, `src/routes/profile.routes.ts`

@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  iepGoalSchema,
+  updatePreferencesSchema as profileUpdatePreferencesSchema,
+  updateProfileSchema as profileUpdateProfileSchema,
+} from '../types/profile';
 
 /**
  * Schémas de Validation Zod pour l'API SuperKids Learning
@@ -72,27 +77,19 @@ export const createProfileSchema = z.object({
   sensoryPreferences: z.array(
     z.enum(['LOW_STIMULATION', 'MEDIUM_STIMULATION', 'HIGH_CONTRAST', 'MONOCHROME'])
   ).optional(),
-  iepGoals: z.array(z.string()).optional(),
+  iepGoals: z.array(iepGoalSchema).optional(),
 });
 
-export const updateProfileSchema = z.object({
-  dateOfBirth: dateOfBirthSchema.optional(),
-  avatarUrl: z.string().url('URL d\'avatar invalide').optional(),
-  developmentLevel: z.enum(['EARLY_INTERVENTION', 'PRESCHOOL', 'ELEMENTARY']).optional(),
-  iepGoals: z.array(z.string()).optional(),
-});
+export const updateProfileSchema = profileUpdateProfileSchema;
 
-export const updatePreferencesSchema = z.object({
-  sensoryPreferences: z.array(
-    z.enum(['LOW_STIMULATION', 'MEDIUM_STIMULATION', 'HIGH_CONTRAST', 'MONOCHROME'])
-  ).optional(),
-  soundEnabled: z.boolean().optional(),
-  animationsEnabled: z.boolean().optional(),
-  dyslexiaMode: z.boolean().optional(),
-  highContrastMode: z.boolean().optional(),
-  fontSize: z.enum(['small', 'medium', 'large']).optional(),
-  autoReadText: z.boolean().optional(),
-});
+export const updatePreferencesSchema = profileUpdatePreferencesSchema.merge(
+  z.object({
+    sensoryPreferences: z.array(
+      z.enum(['LOW_STIMULATION', 'MEDIUM_STIMULATION', 'HIGH_CONTRAST', 'MONOCHROME'])
+    ).optional(),
+    autoReadText: z.boolean().optional(),
+  })
+);
 
 // ============================================================================
 // Schémas d'Activités
