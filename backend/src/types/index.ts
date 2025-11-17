@@ -1,6 +1,6 @@
 // Types et DTOs pour SuperKids Learning Backend
 
-import { UserRole, ActivityCategory, DifficultyLevel } from '@prisma/client';
+import { UserRole, ActivityCategory, DifficultyLevel, SensoryPreference } from '@prisma/client';
 
 // ============ Auth Types ============
 export interface RegisterDTO {
@@ -30,9 +30,11 @@ export interface UpdateProfileDTO {
   dateOfBirth?: Date;
   avatarUrl?: string;
   developmentLevel?: string;
-  iepGoals?: string[];
+  iepGoals?: any[];
   parentIds?: string[];
   educatorIds?: string[];
+  roles?: UserRole[];
+  sensoryPreferences?: SensoryPreference[];
 }
 
 export interface PreferencesDTO {

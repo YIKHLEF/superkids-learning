@@ -102,7 +102,23 @@ const swaggerDefinition: SwaggerDefinition = {
           developmentLevel: { type: 'string' },
           iepGoals: {
             type: 'array',
-            items: { type: 'string' },
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', format: 'uuid' },
+                title: { type: 'string' },
+                description: { type: 'string' },
+                targetDate: { type: 'string', format: 'date' },
+                status: { type: 'string', enum: ['not_started', 'in_progress', 'achieved'] },
+              },
+            },
+          },
+          roles: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['CHILD', 'PARENT', 'EDUCATOR', 'THERAPIST', 'ADMIN'],
+            },
           },
           soundEnabled: { type: 'boolean' },
           animationsEnabled: { type: 'boolean' },

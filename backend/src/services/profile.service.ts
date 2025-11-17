@@ -91,7 +91,8 @@ export class ProfileService {
           iepGoals: profileData.iepGoals || [],
           parentIds: profileData.parentIds || [],
           educatorIds: profileData.educatorIds || [],
-          sensoryPreferences: [],
+          sensoryPreferences: profileData.sensoryPreferences || [],
+          roles: profileData.roles || [],
         },
         include: {
           user: {
@@ -150,6 +151,8 @@ export class ProfileService {
           ...(data.iepGoals && { iepGoals: data.iepGoals }),
           ...(data.parentIds && { parentIds: data.parentIds }),
           ...(data.educatorIds && { educatorIds: data.educatorIds }),
+          ...(data.sensoryPreferences && { sensoryPreferences: data.sensoryPreferences }),
+          ...(data.roles && { roles: data.roles }),
         },
         include: {
           user: {

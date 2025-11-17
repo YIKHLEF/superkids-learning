@@ -15,6 +15,14 @@ export enum SensoryPreference {
   MONOCHROME = 'MONOCHROME',
 }
 
+export interface IEPGoal {
+  id: string;
+  title: string;
+  description?: string;
+  targetDate?: string;
+  status: 'not_started' | 'in_progress' | 'achieved';
+}
+
 export enum ActivityCategory {
   SOCIAL_SKILLS = 'SOCIAL_SKILLS',
   COMMUNICATION = 'COMMUNICATION',
@@ -43,9 +51,10 @@ export interface ChildProfile extends UserProfile {
   dateOfBirth: Date;
   sensoryPreferences: SensoryPreference[];
   developmentLevel: string;
-  iepGoals: string[];
+  iepGoals: IEPGoal[];
   parentIds: string[];
   educatorIds: string[];
+  roles: UserRole[];
   preferences: {
     soundEnabled: boolean;
     animationsEnabled: boolean;

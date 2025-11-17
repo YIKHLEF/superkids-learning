@@ -94,6 +94,8 @@ superkids-learning/
 - Création de profils avec informations de base (nom, âge, date de naissance)
 - Configuration des préférences sensorielles (LOW_STIMULATION, HIGH_CONTRAST, etc.)
 - Définition d'objectifs d'apprentissage personnalisés (IEP)
+- Définition structurée des objectifs IEP (titre, description, date cible, statut)
+- Gestion des préférences sensorielles (LOW_STIMULATION, HIGH_CONTRAST, etc.)
 - Gestion des préférences d'interface (sons, animations, police dyslexie)
 - Gestion multi-utilisateurs (parents, éducateurs, thérapeutes)
 

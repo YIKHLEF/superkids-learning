@@ -12,11 +12,16 @@ import {
   Divider,
   Button,
   Slider,
+  TextField,
+  Chip,
+  Stack,
+  MenuItem,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { RootState } from '../store';
-import { togglePreference } from '../store/slices/profileSlice';
+import { togglePreference, updateIepGoals, updateRoles, updateSensoryPreferences } from '../store/slices/profileSlice';
 import { toggleSetting, setFontSize } from '../store/slices/settingsSlice';
+import { IEPGoal, SensoryPreference, UserRole } from '../types';
 
 const ProfilePage: React.FC = () => {
   const dispatch = useDispatch();
@@ -25,6 +30,16 @@ const ProfilePage: React.FC = () => {
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarName, setAvatarName] = useState('');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [iepGoals, setIepGoals] = useState<IEPGoal[]>(profile?.iepGoals || []);
+  const [newGoal, setNewGoal] = useState<IEPGoal>({
+    id: crypto.randomUUID(),
+    title: '',
+    status: 'not_started',
+  });
+  const [roles, setRoles] = useState<UserRole[]>(profile?.roles || []);
+  const [sensoryPreferences, setSensoryPreferences] = useState<SensoryPreference[]>(
+    profile?.sensoryPreferences || []
+  );
 
   const fontSizeMap = {
     small: 14,
@@ -68,6 +83,41 @@ const ProfilePage: React.FC = () => {
     setAvatarError(null);
     setAvatarName(file.name);
     setUploadMessage('Avatar prêt à être envoyé.');
+  };
+
+  const handleAddGoal = () => {
+    if (!newGoal.title.trim()) return;
+    const updatedGoals = [...iepGoals, { ...newGoal, id: crypto.randomUUID() }];
+    setIepGoals(updatedGoals);
+    dispatch(updateIepGoals(updatedGoals));
+    setNewGoal({ id: crypto.randomUUID(), title: '', status: 'not_started' });
+  };
+
+  const handleUpdateGoal = (id: string, field: keyof IEPGoal, value: string) => {
+    const updatedGoals = iepGoals.map((goal) => (goal.id === id ? { ...goal, [field]: value } : goal));
+    setIepGoals(updatedGoals);
+    dispatch(updateIepGoals(updatedGoals));
+  };
+
+  const handleRemoveGoal = (id: string) => {
+    const updatedGoals = iepGoals.filter((goal) => goal.id !== id);
+    setIepGoals(updatedGoals);
+    dispatch(updateIepGoals(updatedGoals));
+  };
+
+  const toggleSensoryPreference = (preference: SensoryPreference) => {
+    const hasPreference = sensoryPreferences.includes(preference);
+    const updated = hasPreference
+      ? sensoryPreferences.filter((pref) => pref !== preference)
+      : [...sensoryPreferences, preference];
+    setSensoryPreferences(updated);
+    dispatch(updateSensoryPreferences(updated));
+  };
+
+  const toggleRole = (role: UserRole) => {
+    const updated = roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role];
+    setRoles(updated);
+    dispatch(updateRoles(updated));
   };
 
   return (
@@ -155,6 +205,21 @@ const ProfilePage: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                 Préférences d'apprentissage
               </Typography>
+
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Préférences sensorielles
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap', gap: 1 }}>
+                {(Object.values(SensoryPreference) as SensoryPreference[]).map((preference) => (
+                  <Chip
+                    key={preference}
+                    label={preference.replace('_', ' ').toLowerCase()}
+                    color={sensoryPreferences.includes(preference) ? 'primary' : 'default'}
+                    onClick={() => toggleSensoryPreference(preference)}
+                    sx={{ textTransform: 'capitalize' }}
+                  />
+                ))}
+              </Stack>
 
               <Box sx={{ mb: 3 }}>
                 <FormControlLabel
@@ -274,25 +339,92 @@ const ProfilePage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Objectifs d'apprentissage */}
+          {/* Objectifs IEP structurés */}
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                Mes objectifs d'apprentissage
+                Objectifs IEP
               </Typography>
-              {profile?.iepGoals && profile.iepGoals.length > 0 ? (
-                <Box component="ul" sx={{ pl: 2 }}>
-                  {profile.iepGoals.map((goal, index) => (
-                    <Typography component="li" key={index} sx={{ mb: 1 }}>
-                      {goal}
-                    </Typography>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Aucun objectif défini pour le moment
-                </Typography>
-              )}
+              <Stack spacing={2} sx={{ mb: 3 }}>
+                {iepGoals.map((goal) => (
+                  <Box key={goal.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Titre"
+                      value={goal.title}
+                      onChange={(e) => handleUpdateGoal(goal.id, 'title', e.target.value)}
+                      sx={{ mb: 2 }}
+                      required
+                    />
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      value={goal.description || ''}
+                      onChange={(e) => handleUpdateGoal(goal.id, 'description', e.target.value)}
+                      sx={{ mb: 2 }}
+                      multiline
+                      minRows={2}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Date cible"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={goal.targetDate || ''}
+                      onChange={(e) => handleUpdateGoal(goal.id, 'targetDate', e.target.value)}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      select
+                      fullWidth
+                      label="Statut"
+                      value={goal.status}
+                      onChange={(e) => handleUpdateGoal(goal.id, 'status', e.target.value)}
+                    >
+                      <MenuItem value="not_started">Non commencé</MenuItem>
+                      <MenuItem value="in_progress">En cours</MenuItem>
+                      <MenuItem value="achieved">Atteint</MenuItem>
+                    </TextField>
+                    <Button color="error" sx={{ mt: 1 }} onClick={() => handleRemoveGoal(goal.id)}>
+                      Supprimer l'objectif
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                Ajouter un objectif
+              </Typography>
+              <TextField
+                fullWidth
+                label="Titre"
+                value={newGoal.title}
+                onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
+                sx={{ mb: 2 }}
+                required
+              />
+              <Button variant="contained" onClick={handleAddGoal} disabled={!newGoal.title.trim()}>
+                Ajouter
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                Rôles associés au profil
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                {(Object.values(UserRole) as UserRole[]).map((role) => (
+                  <Chip
+                    key={role}
+                    label={role.toLowerCase()}
+                    color={roles.includes(role) ? 'primary' : 'default'}
+                    onClick={() => toggleRole(role)}
+                    sx={{ textTransform: 'capitalize' }}
+                  />
+                ))}
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
