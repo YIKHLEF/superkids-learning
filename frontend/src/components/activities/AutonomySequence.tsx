@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Card, CardContent, Checkbox, FormControlLabel, Typography, LinearProgress, Alert } from '@mui/material';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Card, CardContent, Checkbox, FormControlLabel, Typography, LinearProgress, Alert, Stack, Chip } from '@mui/material';
 import { ActivityReward, DifficultyLevel } from '../../types';
 import analyticsService from '../../services/analytics.service';
 
@@ -10,6 +10,7 @@ interface AutonomySequenceProps {
 
 const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess, metadata }) => {
   const childId = 'demo-child';
+  const sessionStartRef = useRef(Date.now());
   const difficulty = DifficultyLevel.BEGINNER;
   const steps = useMemo(
     () => [
@@ -31,6 +32,7 @@ const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess, metadata
       type: 'activity_start',
       timestamp: new Date().toISOString(),
       difficulty,
+      supportLevel: 'none',
     });
   }, [childId, difficulty]);
 
@@ -46,6 +48,10 @@ const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess, metadata
       difficulty,
       attempts: completedSteps.length + 1,
       successRate: (completedSteps.length + 1) / steps.length,
+      supportLevel: 'minimal',
+      dominantEmotion: 'engaged',
+      emotionalState: 'focused',
+      durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
     });
   };
 
@@ -67,6 +73,10 @@ const AutonomySequence: React.FC<AutonomySequenceProps> = ({ onSuccess, metadata
         difficulty,
         attempts: steps.length,
         successRate: 1,
+        supportLevel: 'minimal',
+        dominantEmotion: 'proud',
+        emotionalState: 'proud',
+        durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
       });
       setFinished(true);
     }

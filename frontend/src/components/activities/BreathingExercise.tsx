@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, Chip, Stack } from '@mui/material';
 import { ActivityReward, DifficultyLevel } from '../../types';
 import analyticsService from '../../services/analytics.service';
@@ -11,6 +11,7 @@ interface BreathingExerciseProps {
 const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess, metadata }) => {
   const childId = 'demo-child';
   const difficulty = DifficultyLevel.BEGINNER;
+  const sessionStartRef = useRef(Date.now());
   const cycles = useMemo(
     () => [
       { label: 'Inspire', duration: 4 },
@@ -31,6 +32,7 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess, metada
       type: 'activity_start',
       timestamp: new Date().toISOString(),
       difficulty,
+      supportLevel: 'none',
     });
   }, [childId, difficulty]);
 
@@ -45,7 +47,10 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess, metada
       timestamp: new Date().toISOString(),
       difficulty,
       attempts: cyclesDone + 1,
+      supportLevel: 'minimal',
+      dominantEmotion: 'calm',
       emotionalState: 'calm',
+      durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
     });
   };
 
@@ -65,7 +70,10 @@ const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onSuccess, metada
         difficulty,
         attempts: cyclesDone,
         successRate: 1,
+        supportLevel: 'minimal',
+        dominantEmotion: 'calm',
         emotionalState: 'calm',
+        durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
       });
       setCelebrated(true);
     }

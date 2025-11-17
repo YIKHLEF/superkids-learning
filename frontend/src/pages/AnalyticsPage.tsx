@@ -59,10 +59,17 @@ const AnalyticsPage: React.FC = () => {
       labels: analytics?.events.map((event) => new Date(event.timestamp).toLocaleTimeString()) || [],
       datasets: [
         {
-          label: 'Taux de réussite',
-          data: analytics?.events.map((event) => (event.successRate ?? 0) * 100) || [],
+          label: 'Taux de réussite (%)',
+          data: analytics?.events.map((event) => Math.round((event.successRate ?? 0) * 100)) || [],
           borderColor: '#A8D5E2',
-          backgroundColor: 'rgba(168, 213, 226, 0.4)',
+          backgroundColor: 'rgba(168, 213, 226, 0.25)',
+        },
+        {
+          label: 'Durée (min)',
+          data:
+            analytics?.events.map((event) => Math.round((event.durationSeconds || 0) / 60)) || [],
+          borderColor: '#7BC6CC',
+          backgroundColor: 'rgba(123, 198, 204, 0.2)',
         },
       ],
     }),
@@ -83,20 +90,32 @@ const AnalyticsPage: React.FC = () => {
     [analytics]
   );
 
-  const radarData = useMemo(
-    () => ({
-      labels: ['Social', 'Communication', 'Académique', 'Autonomie', 'Émotions'],
+  const radarData = useMemo(() => {
+    const skills = analytics?.aggregates.skillAverages || {};
+    const fallbackSkills: [string, number][] = [
+      ['SOCIAL_SKILLS', 0],
+      ['COMMUNICATION', 0],
+      ['ACADEMIC', 0],
+      ['AUTONOMY', 0],
+      ['EMOTIONAL_REGULATION', 0],
+    ];
+
+    const entries = Object.entries(skills).length ? Object.entries(skills) : fallbackSkills;
+    const labels = entries.map(([key]) => key.replace(/_/g, ' ').toLowerCase());
+    const values = entries.map(([, value]) => Math.round((value || 0) * 100));
+
+    return {
+      labels,
       datasets: [
         {
           label: 'Compétences',
-          data: [85, 78, 92, 70, 88],
+          data: values,
           backgroundColor: 'rgba(168, 213, 226, 0.4)',
           borderColor: '#A8D5E2',
         },
       ],
-    }),
-    []
-  );
+    };
+  }, [analytics]);
 
   return (
     <Box>
@@ -273,10 +292,10 @@ const AnalyticsPage: React.FC = () => {
                 <Grid item xs={6} md={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h3" color="secondary.main" sx={{ fontWeight: 700 }}>
-                      7
+                      {analytics?.aggregates.attempts ?? 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Jours consécutifs
+                      Tentatives enregistrées
                     </Typography>
                   </Box>
                 </Grid>

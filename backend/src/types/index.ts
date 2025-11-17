@@ -98,6 +98,8 @@ export interface ActivityEventPayload {
   attempts?: number;
   successRate?: number;
   emotionalState?: string;
+  dominantEmotion?: string;
+  supportLevel?: string;
   durationSeconds?: number;
   metadata?: Record<string, unknown>;
 }

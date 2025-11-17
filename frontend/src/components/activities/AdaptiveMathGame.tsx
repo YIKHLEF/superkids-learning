@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Card,
@@ -28,6 +28,7 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
   metadata,
 }) => {
   const childId = 'demo-child';
+  const sessionStartRef = useRef(Date.now());
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
   const [progress, setProgress] = useState(30);
   const [feedback, setFeedback] = useState('Réponds correctement pour débloquer le niveau supérieur.');
@@ -40,6 +41,7 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
       type: 'activity_start',
       timestamp: new Date().toISOString(),
       difficulty,
+      supportLevel: 'none',
     });
   }, [childId, difficulty]);
 
@@ -79,6 +81,9 @@ const AdaptiveMathGame: React.FC<AdaptiveMathGameProps> = ({
       difficulty: nextLevel,
       attempts: 1,
       successRate: success ? 1 : 0,
+      supportLevel: success ? 'minimal' : 'moderate',
+      dominantEmotion: success ? 'joyful' : 'focused',
+      durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
     });
 
     if (success && newProgress >= 80 && !celebrated) {

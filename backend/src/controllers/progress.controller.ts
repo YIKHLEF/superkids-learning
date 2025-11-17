@@ -1,7 +1,6 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ActivityEventPayload } from '../types';
-
-const inMemoryEvents: ActivityEventPayload[] = [];
+import { ServiceFactory } from '../services';
 
 export const getProgress = async (req: Request, res: Response) => {
   const { childId } = req.params;
@@ -82,52 +81,40 @@ export const unlockReward = async (req: Request, res: Response) => {
   });
 };
 
-export const recordProgressEvent = async (req: Request, res: Response) => {
-  const event = req.body as ActivityEventPayload;
-  inMemoryEvents.push(event);
+export const recordProgressEvent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const event = req.body as ActivityEventPayload;
+    const service = ServiceFactory.getProgressService();
+    const analytics = await service.recordProgressEvent(event);
 
-  res.json({
-    status: 'success',
-    data: { event },
-  });
+    res.json({
+      status: 'success',
+      data: analytics,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const listProgressEvents = async (req: Request, res: Response) => {
-  const { childId } = req.query;
-  const filtered = childId
-    ? inMemoryEvents.filter((event) => event.childId === childId)
-    : inMemoryEvents;
+export const listProgressEvents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { childId } = req.query;
+    const service = ServiceFactory.getProgressService();
+    const analytics = await service.getProgressAnalytics(childId as string | undefined);
 
-  const totalDurationSeconds = filtered.reduce(
-    (acc, event) => acc + (event.durationSeconds || 0),
-    0
-  );
-  const attempts = filtered.reduce((acc, event) => acc + (event.attempts || 0), 0);
-  const emotionalStates = filtered.reduce<Record<string, number>>((map, event) => {
-    if (event.emotionalState) {
-      map[event.emotionalState] = (map[event.emotionalState] || 0) + 1;
-    }
-    return map;
-  }, {});
-
-  const successEvents = filtered.filter((event) => event.type === 'success');
-  const averageSuccessRate = successEvents.length
-    ?
-        successEvents.reduce((acc, event) => acc + (event.successRate ?? 1), 0) /
-      successEvents.length
-    : 0;
-
-  res.json({
-    status: 'success',
-    data: {
-      events: filtered,
-      aggregates: {
-        totalActivities: filtered.filter((e) => e.type === 'activity_start').length,
-        averageSuccessRate,
-        totalDurationSeconds,
-        emotionalStates,
-        attempts,
-      },
-    },
-  });
+    res.json({
+      status: 'success',
+      data: analytics,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
