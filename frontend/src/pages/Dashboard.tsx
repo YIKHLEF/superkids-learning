@@ -9,18 +9,25 @@ import {
   LinearProgress,
   Button,
   Avatar,
+  Alert,
+  Chip,
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
   TrendingUp as TrendingIcon,
   LocalFireDepartment as StreakIcon,
   Star as StarIcon,
+  Favorite as HeartIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 
 const Dashboard: React.FC = () => {
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
   const progress = useSelector((state: RootState) => state.progress.progress);
+  const lastFeedback = useSelector((state: RootState) => state.progress.lastFeedback);
+  const progression = useSelector((state: RootState) => state.progress.progression);
+
+  const tokensToNextBadge = Math.max(0, 100 - (progress?.tokensEarned || 0));
 
   const stats = [
     {
@@ -178,6 +185,84 @@ const Dashboard: React.FC = () => {
                     {emoji}
                   </Avatar>
                 ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mt: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                Feedback immédiat
+              </Typography>
+              {lastFeedback ? (
+                <Alert severity="success" icon={<HeartIcon />} sx={{ mb: 2 }}>
+                  {lastFeedback.message}
+                  <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Chip label={`+${lastFeedback.tokensAwarded} jetons`} color="success" size="small" />
+                    {lastFeedback.badgeUnlocked && (
+                      <Chip label={`Badge ${lastFeedback.badgeUnlocked}`} color="secondary" size="small" />
+                    )}
+                    {lastFeedback.recommendedDifficulty && (
+                      <Chip
+                        label={`Prochaine difficulté : ${lastFeedback.recommendedDifficulty.toLowerCase()}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                  </Box>
+                </Alert>
+              ) : (
+                <Alert severity="info">Commence une activité pour recevoir du feedback personnalisé.</Alert>
+              )}
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Progression vers le prochain badge
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, ((progress?.tokensEarned || 0) / 100) * 100)}
+                sx={{ mb: 1 }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {tokensToNextBadge === 0
+                  ? 'Prochain badge débloqué !'
+                  : `${tokensToNextBadge} jetons restants avant le prochain badge`}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                Progression hebdomadaire
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Activités complétées cette semaine
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, (progression?.weekly || 0) * 10)}
+                sx={{ mb: 2 }}
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Maîtrise par compétence
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {Object.entries(progression?.mastery || { Communication: 60, Autonomie: 40 }).map(
+                  ([skill, value]) => (
+                    <Chip
+                      key={skill}
+                      label={`${skill}: ${value}%`}
+                      color={value > 70 ? 'success' : 'default'}
+                      variant={value > 70 ? 'filled' : 'outlined'}
+                    />
+                  )
+                )}
               </Box>
             </CardContent>
           </Card>

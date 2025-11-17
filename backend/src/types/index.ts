@@ -64,11 +64,15 @@ export interface CreateActivityDTO {
 
 export interface SessionResults {
   completed: boolean;
-  successRate: number;
+  successRate?: number;
   attemptsCount: number;
   supportLevel: string;
   emotionalState?: string;
   notes?: string;
+  correctAnswers?: number;
+  totalQuestions?: number;
+  hintsUsed?: number;
+  timeSpentSeconds?: number;
 }
 
 export interface StartSessionDTO {
