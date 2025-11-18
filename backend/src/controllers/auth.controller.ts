@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { auditService } from '../middleware/audit';
 
 // Simulé - à remplacer par Prisma Client
 export const register = async (req: Request, res: Response) => {
@@ -71,6 +72,7 @@ export const login = async (req: Request, res: Response) => {
     };
 
     if (!user) {
+      await auditService.logFailedLogin(email, req.ip, req.headers['user-agent'] || 'unknown', 'Utilisateur introuvable');
       throw new AppError('Identifiants incorrects', 401);
     }
 
@@ -78,6 +80,12 @@ export const login = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+      await auditService.logFailedLogin(
+        email,
+        req.ip,
+        req.headers['user-agent'] || 'unknown',
+        'Mot de passe invalide'
+      );
       throw new AppError('Identifiants incorrects', 401);
     }
 
@@ -89,6 +97,12 @@ export const login = async (req: Request, res: Response) => {
     );
 
     logger.info(`User logged in: ${email}`);
+
+    await auditService.logSuccessfulLogin(
+      user.id,
+      req.ip,
+      req.headers['user-agent'] || 'unknown'
+    );
 
     res.json({
       status: 'success',

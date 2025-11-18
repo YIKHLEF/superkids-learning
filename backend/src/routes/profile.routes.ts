@@ -7,6 +7,9 @@ import {
   uploadAvatar,
 } from '../controllers/profile.controller';
 import { uploadAvatarMiddleware } from '../middleware/secureUpload';
+import { anonymizeResponse, requireParentalConsent } from '../middleware/compliance';
+import { auditLog } from '../middleware/audit';
+import { AuditAction } from '../services/audit.service';
 
 const router = Router();
 
@@ -38,7 +41,7 @@ const router = Router();
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/children/all', getChildProfiles);
+router.get('/children/all', anonymizeResponse(['email']), getChildProfiles);
 
 /**
  * @openapi
@@ -77,7 +80,12 @@ router.get('/children/all', getChildProfiles);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', getProfile);
+router.get(
+  '/:id',
+  anonymizeResponse(['email', 'parentEmail']),
+  auditLog(AuditAction.PROFILE_VIEW),
+  getProfile
+);
 
 /**
  * @openapi
@@ -145,7 +153,12 @@ router.get('/:id', getProfile);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', updateProfile);
+router.put(
+  '/:id',
+  requireParentalConsent(),
+  auditLog(AuditAction.PROFILE_UPDATE, undefined, (req) => ({ profileId: req.params.id })),
+  updateProfile
+);
 
 /**
  * @openapi
@@ -221,7 +234,12 @@ router.put('/:id', updateProfile);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.patch('/:id/preferences', updatePreferences);
+router.patch(
+  '/:id/preferences',
+  requireParentalConsent(),
+  auditLog(AuditAction.PROFILE_UPDATE, undefined, (req) => ({ profileId: req.params.id })),
+  updatePreferences
+);
 
 router.post('/:id/avatar', uploadAvatarMiddleware, uploadAvatar);
 

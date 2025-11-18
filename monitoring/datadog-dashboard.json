@@ -1,0 +1,67 @@
+{
+  "title": "SuperKids - Production Observability",
+  "description": "Audit, sécurité et performance backend",
+  "widgets": [
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Taux de réussite API (2xx vs 4xx/5xx)",
+        "requests": [
+          {
+            "q": "sum:trace.http.requests{service:superkids-backend,status:2xx}.rollup(sum,60)",
+            "display_type": "lines",
+            "name": "Succès"
+          },
+          {
+            "q": "sum:trace.http.requests{service:superkids-backend,status:4xx}.rollup(sum,60)",
+            "display_type": "lines",
+            "name": "Client errors"
+          },
+          {
+            "q": "sum:trace.http.requests{service:superkids-backend,status:5xx}.rollup(sum,60)",
+            "display_type": "lines",
+            "name": "Server errors"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Tentatives de connexion échouées (15m)",
+        "requests": [
+          {
+            "q": "sum:logs(\"audit_action:FAILED_LOGIN\").index(\"*\")",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Rate limiting et dépassements",
+        "requests": [
+          {
+            "q": "sum:logs(\"audit_action:RATE_LIMIT_EXCEEDED\").rollup(sum,60)",
+            "display_type": "area",
+            "name": "Blocages"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Endpoints sensibles (audit)",
+        "requests": [
+          {
+            "q": "top(sum:logs(\"audit_action:*\" by {audit_action}).rollup(sum,300),10, 'mean','desc')",
+            "conditional_formats": []
+          }
+        ]
+      }
+    }
+  ]
+}
