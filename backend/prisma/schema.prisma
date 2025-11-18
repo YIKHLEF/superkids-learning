@@ -32,6 +32,13 @@ enum ActivityCategory {
   EMOTIONAL_REGULATION
 }
 
+enum RewardType {
+  BADGE
+  AVATAR
+  THEME
+  CELEBRATION
+}
+
 enum DifficultyLevel {
   BEGINNER
   INTERMEDIATE
@@ -144,6 +151,11 @@ model Progress {
   longestStreak             Int          @default(0)
   lastActivityDate          DateTime?
   rewardsUnlocked           String[]
+  badgesUnlocked            String[]     @default([])
+  avatarsUnlocked           String[]     @default([])
+  themesUnlocked            String[]     @default([])
+  weeklyProgress            Int          @default(0)
+  weeklyTarget              Int          @default(5)
   totalDurationSeconds      Int          @default(0)
   totalAttempts             Int          @default(0)
   averageSuccessRate        Float        @default(0)
@@ -161,7 +173,11 @@ model Reward {
   description       String
   iconUrl           String
   tokensRequired    Int
-  type              String    // badge, avatar, theme, celebration
+  type              RewardType
+  category          ActivityCategory?
+  themePreview      String?
+  avatarUrl         String?
+  badgeCondition    String?
 
   createdAt         DateTime  @default(now())
 

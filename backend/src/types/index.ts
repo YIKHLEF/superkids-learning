@@ -1,6 +1,12 @@
 // Types et DTOs pour SuperKids Learning Backend
 
-import { UserRole, ActivityCategory, DifficultyLevel, SensoryPreference } from '@prisma/client';
+import {
+  UserRole,
+  ActivityCategory,
+  DifficultyLevel,
+  SensoryPreference,
+  RewardType,
+} from '@prisma/client';
 import {
   IepGoal,
   PreferencesDTO,
@@ -87,6 +93,7 @@ export interface ActivityRewardPayload {
   badgeId?: string;
   themeId?: string;
   avatarId?: string;
+  rewardType?: RewardType;
 }
 
 export interface ActivityEventPayload {

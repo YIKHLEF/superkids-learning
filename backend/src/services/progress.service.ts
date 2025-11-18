@@ -11,7 +11,10 @@ export class ProgressService {
 
   async recordProgressEvent(event: ActivityEventPayload) {
     try {
-      await this.upsertSessionFromEvent(event);
+      const session = await this.upsertSessionFromEvent(event);
+      if (event.type === 'success') {
+        await this.applyRewardsForCompletion(session, event);
+      }
       return this.getProgressAnalytics(event.childId);
     } catch (error) {
       logger.error("Erreur lors de l'enregistrement de l'événement de progrès:", error);
@@ -153,6 +156,56 @@ export class ProgressService {
       attempts: totalAttempts,
       skillAverages,
     };
+  }
+
+  private async applyRewardsForCompletion(session: ActivitySession, event: ActivityEventPayload) {
+    const progress = await this.prisma.progress.upsert({
+      where: { childId: session.childId },
+      create: { childId: session.childId },
+      update: {},
+    });
+
+    const tokensEarned = Math.max(5, Math.round((event.successRate || 0.5) * 10));
+    const streak = progress.lastActivityDate ? this.calculateNextStreak(progress.lastActivityDate) : 1;
+
+    const updatedAttempts = (progress.totalAttempts || 0) + (event.attempts || 0);
+    const updatedDuration = (progress.totalDurationSeconds || 0) + (event.durationSeconds || 0);
+    const updatedCompleted = (progress.totalActivitiesCompleted || 0) + 1;
+    const updatedAverageSuccess = this.recomputeAverage(progress.averageSuccessRate, progress.totalActivitiesCompleted, event.successRate);
+
+    const badgeMilestone = updatedCompleted % 5 === 0;
+    const badgeId = badgeMilestone ? 'milestone-badge' : undefined;
+
+    await this.prisma.progress.update({
+      where: { childId: session.childId },
+      data: {
+        tokensEarned: progress.tokensEarned + tokensEarned,
+        totalActivitiesCompleted: updatedCompleted,
+        weeklyProgress: (progress.weeklyProgress || 0) + 1,
+        lastActivityDate: new Date(event.timestamp),
+        currentStreak: streak,
+        longestStreak: Math.max(progress.longestStreak || 0, streak),
+        totalAttempts: updatedAttempts,
+        totalDurationSeconds: updatedDuration,
+        averageSuccessRate: updatedAverageSuccess,
+        ...(badgeId && { badgesUnlocked: Array.from(new Set([...(progress.badgesUnlocked || []), badgeId])) }),
+        ...(badgeId && { rewardsUnlocked: Array.from(new Set([...(progress.rewardsUnlocked || []), badgeId])) }),
+      },
+    });
+  }
+
+  private calculateNextStreak(lastDate: Date) {
+    const today = new Date();
+    const daysSince = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince === 0) return 1;
+    if (daysSince === 1) return 2;
+    return 1;
+  }
+
+  private recomputeAverage(currentAverage: number, count: number, nextValue?: number) {
+    if (!nextValue && nextValue !== 0) return currentAverage;
+    const total = currentAverage * (count || 0);
+    return (total + nextValue) / ((count || 0) + 1);
   }
 
   /**

@@ -190,7 +190,8 @@ async function main() {
         description: 'Complète 5 activités en un jour',
         iconUrl: '/rewards/champion.png',
         tokensRequired: 50,
-        type: 'badge',
+        type: 'BADGE',
+        badgeCondition: '5 activités terminées',
       },
     }),
     prisma.reward.create({
@@ -199,7 +200,9 @@ async function main() {
         description: 'Réussis 10 activités de régulation émotionnelle',
         iconUrl: '/rewards/emotions.png',
         tokensRequired: 100,
-        type: 'badge',
+        type: 'BADGE',
+        category: 'EMOTIONAL_REGULATION',
+        badgeCondition: '10 activités émotions',
       },
     }),
     prisma.reward.create({
@@ -207,8 +210,19 @@ async function main() {
         name: 'Avatar Robot',
         description: 'Un avatar robot cool',
         iconUrl: '/avatars/robot.png',
+        avatarUrl: '/avatars/robot-full.png',
         tokensRequired: 75,
-        type: 'avatar',
+        type: 'AVATAR',
+      },
+    }),
+    prisma.reward.create({
+      data: {
+        name: 'Thème Nuit Étoilée',
+        description: 'Palette sombre apaisante',
+        iconUrl: '/themes/night.png',
+        themePreview: '#0b1021,#1c2541,#3a506b',
+        tokensRequired: 60,
+        type: 'THEME',
       },
     }),
   ]);
@@ -270,6 +284,10 @@ async function main() {
       longestStreak: 12,
       lastActivityDate: new Date(),
       rewardsUnlocked: [rewards[0].id],
+      badgesUnlocked: [rewards[0].id],
+      avatarsUnlocked: [],
+      themesUnlocked: [],
+      weeklyProgress: 3,
     },
   });
 
