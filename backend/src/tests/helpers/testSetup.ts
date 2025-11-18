@@ -102,6 +102,8 @@ export async function createTestResource(): Promise<any> {
       url: 'https://example.com/video.mp4',
       category: 'Émotions',
       tags: ['émotions', 'vidéo', 'enfants'],
+      language: 'fr',
+      ageRange: [6, 9],
     },
   });
 }

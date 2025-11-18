@@ -210,8 +210,12 @@ export interface Resource {
   type: 'video' | 'pictogram' | 'social_story' | 'guide' | 'tutorial';
   category: string;
   url: string;
+  assetUrl?: string;
   thumbnailUrl?: string;
   tags: string[];
+  isFavorite?: boolean;
+  language?: string;
+  ageRange?: number[];
   createdAt: Date;
 }
 

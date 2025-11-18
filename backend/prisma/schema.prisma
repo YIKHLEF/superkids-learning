@@ -191,8 +191,12 @@ model Resource {
   type          String    // video, pictogram, social_story, guide, tutorial
   category      String
   url           String
+  assetUrl      String?
   thumbnailUrl  String?
-  tags          String[]
+  tags          String[]  @default([])
+  isFavorite    Boolean   @default(false)
+  language      String?   @default("fr")
+  ageRange      Int[]    @default([])
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

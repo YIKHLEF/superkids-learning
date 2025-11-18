@@ -4,9 +4,11 @@ import {
   getResourcesByType,
   getResourceById,
   searchResources,
+  toggleFavorite,
   uploadResourceAsset,
 } from '../controllers/resource.controller';
 import { uploadResourceMiddleware } from '../middleware/secureUpload';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
@@ -80,7 +82,7 @@ const router = Router();
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/', getAllResources);
+router.get('/', authenticateToken, getAllResources);
 
 /**
  * @openapi
@@ -119,7 +121,7 @@ router.get('/', getAllResources);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/type/:type', getResourcesByType);
+router.get('/type/:type', authenticateToken, getResourcesByType);
 
 /**
  * @openapi
@@ -174,7 +176,7 @@ router.get('/type/:type', getResourcesByType);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.get('/search', searchResources);
+router.get('/search', authenticateToken, searchResources);
 
 /**
  * @openapi
@@ -213,7 +215,9 @@ router.get('/search', searchResources);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', getResourceById);
+router.get('/:id', authenticateToken, getResourceById);
+
+router.patch('/:id/favorite', authenticateToken, toggleFavorite);
 
 router.post('/upload', uploadResourceMiddleware, uploadResourceAsset);
 

@@ -185,6 +185,7 @@ export interface ResourceFilters {
   category?: string;
   tags?: string[];
   search?: string;
+  language?: string;
 }
 
 export interface CreateResourceDTO {
@@ -193,8 +194,12 @@ export interface CreateResourceDTO {
   type: string;
   category: string;
   url: string;
+  assetUrl?: string;
   thumbnailUrl?: string;
   tags: string[];
+  isFavorite?: boolean;
+  language?: string;
+  ageRange?: number[];
 }
 
 export interface UpdateResourceDTO {
@@ -202,8 +207,12 @@ export interface UpdateResourceDTO {
   description?: string;
   category?: string;
   url?: string;
+  assetUrl?: string;
   thumbnailUrl?: string;
   tags?: string[];
+  isFavorite?: boolean;
+  language?: string;
+  ageRange?: number[];
 }
 
 export interface UploadMetadata {

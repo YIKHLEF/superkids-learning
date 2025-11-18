@@ -43,14 +43,19 @@ export class ResourceService {
 
       if (filters?.tags && filters.tags.length > 0) {
         whereClause.tags = {
-          hasSome: filters.tags,
+          hasEvery: filters.tags,
         };
+      }
+
+      if (filters?.language) {
+        whereClause.language = filters.language;
       }
 
       if (filters?.search) {
         whereClause.OR = [
-          { title: { contains: filters.search, mode: 'insensitive' } },
-          { description: { contains: filters.search, mode: 'insensitive' } },
+          { title: { search: filters.search } },
+          { description: { search: filters.search } },
+          { tags: { hasSome: [filters.search.toLowerCase()] } },
         ];
       }
 
@@ -132,15 +137,24 @@ export class ResourceService {
   /**
    * Rechercher des ressources
    */
-  async searchResources(query: string): Promise<Resource[]> {
+  async searchResources(query: string, filters?: ResourceFilters): Promise<Resource[]> {
     try {
       const resources = await this.prisma.resource.findMany({
         where: {
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
+            { title: { search: query } },
+            { description: { search: query } },
             { tags: { hasSome: [query.toLowerCase()] } },
           ],
+          ...(filters?.type && { type: filters.type }),
+          ...(filters?.category && { category: filters.category }),
+          ...(filters?.tags?.length
+            ? {
+                tags: {
+                  hasEvery: filters.tags,
+                },
+              }
+            : {}),
         },
         orderBy: { createdAt: 'desc' },
         take: 50, // Limiter les résultats de recherche
@@ -166,8 +180,12 @@ export class ResourceService {
           type: data.type,
           category: data.category,
           url: data.url,
+          assetUrl: data.assetUrl,
           thumbnailUrl: data.thumbnailUrl,
           tags: data.tags,
+          isFavorite: data.isFavorite ?? false,
+          language: data.language,
+          ageRange: data.ageRange || [],
         },
       });
 
@@ -202,8 +220,12 @@ export class ResourceService {
           ...(data.description && { description: data.description }),
           ...(data.category && { category: data.category }),
           ...(data.url && { url: data.url }),
+          ...(data.assetUrl && { assetUrl: data.assetUrl }),
           ...(data.thumbnailUrl && { thumbnailUrl: data.thumbnailUrl }),
           ...(data.tags && { tags: data.tags }),
+          ...(data.isFavorite !== undefined && { isFavorite: data.isFavorite }),
+          ...(data.language && { language: data.language }),
+          ...(data.ageRange && { ageRange: data.ageRange }),
         },
       });
 
@@ -332,6 +354,27 @@ export class ResourceService {
     } catch (error) {
       logger.error('Erreur lors de la récupération des tags:', error);
       throw new AppError('Erreur lors de la récupération des tags', 500);
+    }
+  }
+
+  async toggleFavorite(resourceId: string, isFavorite: boolean): Promise<Resource> {
+    try {
+      const existing = await this.prisma.resource.findUnique({ where: { id: resourceId } });
+
+      if (!existing) {
+        throw new AppError('Ressource introuvable', 404);
+      }
+
+      return this.prisma.resource.update({
+        where: { id: resourceId },
+        data: { isFavorite },
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error('Erreur lors de la mise à jour du favori:', error);
+      throw new AppError('Impossible de mettre à jour le favori', 500);
     }
   }
 }

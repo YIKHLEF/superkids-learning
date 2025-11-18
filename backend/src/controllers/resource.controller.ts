@@ -1,65 +1,90 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceFactory } from '../services';
 
-export const getAllResources = async (_req: Request, res: Response) => {
-  res.json({
-    status: 'success',
-    data: {
-      resources: [
-        {
-          id: '1',
-          title: 'Comment dire bonjour',
-          description: 'Vidéo de modélisation pour apprendre à saluer',
-          type: 'video',
-          category: 'Communication',
-          url: '/videos/dire-bonjour.mp4',
-          thumbnailUrl: '/thumbnails/dire-bonjour.jpg',
-          tags: ['salutations', 'social', 'communication'],
-        },
-      ],
-    },
-  });
-};
+export const getAllResources = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const service = ServiceFactory.getResourceService();
+    const { page = '1', limit = '20', type, category, tags, search, language } =
+      req.query;
 
-export const getResourcesByType = async (req: Request, res: Response) => {
-  const { type } = req.params;
+    const parsedTags = typeof tags === 'string' ? tags.split(',').filter(Boolean) : [];
 
-  res.json({
-    status: 'success',
-    data: {
-      resources: [],
-      type,
-    },
-  });
-};
-
-export const getResourceById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  res.json({
-    status: 'success',
-    data: {
-      resource: {
-        id,
-        title: 'Ressource exemple',
-        description: 'Description de la ressource',
-        type: 'video',
-        url: '/resources/example.mp4',
+    const resources = await service.getAllResources(
+      {
+        type: typeof type === 'string' ? type : undefined,
+        category: typeof category === 'string' ? category : undefined,
+        tags: parsedTags.length ? parsedTags : undefined,
+        search: typeof search === 'string' ? search : undefined,
+        language: typeof language === 'string' ? language : undefined,
       },
-    },
-  });
+      {
+        page: Number(page),
+        limit: Number(limit),
+      }
+    );
+
+    res.json({
+      success: true,
+      data: resources.data,
+      pagination: resources.pagination,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const searchResources = async (req: Request, res: Response) => {
-  const { query } = req.query;
+export const getResourcesByType = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { type } = req.params;
+    const service = ServiceFactory.getResourceService();
+    const resources = await service.getResourcesByType(type);
 
-  res.json({
-    status: 'success',
-    data: {
-      resources: [],
-      query,
-    },
-  });
+    res.json({ success: true, data: resources });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getResourceById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const service = ServiceFactory.getResourceService();
+    const resource = await service.getResourceById(id);
+
+    res.json({ success: true, data: resource });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchResources = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { q, type, category, tags } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ success: false, message: 'Paramètre de recherche manquant' });
+    }
+
+    const parsedTags = typeof tags === 'string' ? tags.split(',').filter(Boolean) : [];
+    const service = ServiceFactory.getResourceService();
+    const resources = await service.searchResources(q, {
+      type: typeof type === 'string' ? type : undefined,
+      category: typeof category === 'string' ? category : undefined,
+      tags: parsedTags.length ? parsedTags : undefined,
+    });
+
+    res.json({ success: true, data: resources, count: resources.length });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const uploadResourceAsset = async (
@@ -77,6 +102,20 @@ export const uploadResourceAsset = async (
       data: resource,
       metadata,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleFavorite = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { isFavorite } = req.body;
+    const service = ServiceFactory.getResourceService();
+
+    const updated = await service.toggleFavorite(id, Boolean(isFavorite));
+
+    res.json({ success: true, data: updated });
   } catch (error) {
     next(error);
   }

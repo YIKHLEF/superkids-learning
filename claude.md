@@ -158,6 +158,15 @@ superkids-learning/
 - Exercices de respiration (rituel 4-2-4)
 - Catalogue d'activités annoté avec des tags EBP (Evidence-Based Practices) filtrables côté frontend et exposés via l'API `/api/activities`.
 
+### Module 3 : Bibliothèque de ressources
+**Objectif** : Centraliser les médias pédagogiques et favoriser leur réutilisation.**
+
+**Mises à jour clés** :
+- Schéma Prisma `Resource` enrichi (`assetUrl`, `isFavorite`, `language`, `ageRange`) pour mieux typer les médias et stocker le statut de favori.
+- API filtrable (type, catégorie, tags, recherche full-text) avec sécurisation JWT sur toutes les routes `/api/resources` et un endpoint de mise en favori (`PATCH /api/resources/:id/favorite`).
+- Page frontend `ResourcesPage.tsx` avec recherche instantanée, filtres de tags, favoris et affichage des pictogrammes via `components/accessibility/pictograms.ts`.
+- Store Redux (`resourceSlice`) pour persister les filtres et synchroniser les favoris utilisateurs avec le backend.
+
 ## Moteur Adaptatif (nouveau)
 - Backend : `backend/src/services/adaptive.service.ts` orchestre désormais la bascule ML/heuristique (journalisation de la provenance) et persiste chaque recommandation dans la table Prisma `AdaptiveRecommendation` pour l'audit et l'affinage.
 - Endpoint dédié : `POST /api/adaptive/recommendations` (contrôleur `backend/src/controllers/adaptive.controller.ts`, routes `backend/src/routes/adaptive.routes.ts`) est validé par Zod (`adaptiveContextSchema`) incluant performances, émotions et préférences sensorielles.
