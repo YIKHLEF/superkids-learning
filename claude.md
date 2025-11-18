@@ -23,6 +23,11 @@ SuperKids Learning est une application web d'apprentissage conçue spécifiqueme
 - **Real-time**: Socket.io pour la messagerie en temps réel
 - **Logging**: Winston
 
+### Récompenses et progression
+- Les modèles Prisma `Reward` et `Progress` suivent une typologie unifiée (`RewardType`) pour différencier badges, avatars, thèmes et célébrations.
+- Les déblocages sont tracés par type (badges, avatars, thèmes) et alimentent les barres de progression hebdomadaires.
+- Le seeding inclut désormais des exemples cohérents pour chaque type de récompense afin de faciliter les tests d'intégration front/back.
+
 ## Structure du Projet
 
 ```

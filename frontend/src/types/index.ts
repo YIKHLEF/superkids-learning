@@ -95,14 +95,20 @@ export interface ActivitySession {
   durationSeconds?: number;
 }
 
+export type RewardType = 'BADGE' | 'AVATAR' | 'THEME' | 'CELEBRATION';
+
 export interface Reward {
   id: string;
   name: string;
   description: string;
   iconUrl: string;
   tokensRequired: number;
-  type: 'badge' | 'avatar' | 'theme' | 'celebration';
+  type: RewardType;
   unlocked: boolean;
+  owned?: boolean;
+  themePreview?: string;
+  avatarUrl?: string;
+  badgeCondition?: string;
 }
 
 export interface ActivityReward {
@@ -112,6 +118,7 @@ export interface ActivityReward {
   themeId?: string;
   avatarId?: string;
   message?: string;
+  rewardType?: RewardType;
 }
 
 export interface Progress {
