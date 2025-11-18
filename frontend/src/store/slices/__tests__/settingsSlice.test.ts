@@ -25,6 +25,7 @@ describe('settingsSlice', () => {
     globalVolume: 80,
     dyslexiaFont: false,
     autoRead: false,
+    sensoryProfile: 'standard',
   };
 
   it('met à jour les préférences en masse', () => {
@@ -39,10 +40,18 @@ describe('settingsSlice', () => {
   });
 
   it('active le thème haute-contraste en ajustant les préférences dérivées', () => {
-    const state = settingsReducer({ accessibility: baseAccessibility, theme: 'default' }, setTheme('highContrast'));
+    const state = settingsReducer({ accessibility: baseAccessibility, theme: 'default' }, setTheme('high-contrast'));
     expect(state.accessibility.highContrast).toBe(true);
-    expect(state.accessibility.contrastLevel).toBe('high');
+    expect(state.accessibility.contrastLevel).toBe('maximum');
     expect(state.accessibility.palette).toBe('monochrome');
+  });
+
+  it('active le mode hypersensible et réduit les sollicitations', () => {
+    const state = settingsReducer({ accessibility: baseAccessibility, theme: 'default' }, setTheme('hypersensitive'));
+    expect(state.accessibility.reducedMotion).toBe(true);
+    expect(state.accessibility.animationsEnabled).toBe(false);
+    expect(state.accessibility.soundEnabled).toBe(false);
+    expect(state.accessibility.sensoryProfile).toBe('hypersensitive');
   });
 
   it('définit la taille de police et la palette', () => {

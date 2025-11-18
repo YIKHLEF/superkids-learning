@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React, { useMemo, useState } from 'react';
 import { ThemeProvider, Box, Stack, Typography, Slider, Chip, FormControlLabel, Switch, Select, MenuItem } from '@mui/material';
-import { createAppTheme } from '../styles/theme';
+import { createAppTheme, ThemeVariant } from '../styles/theme';
 import { AccessibilitySettings } from '../types';
 
 const meta: Meta = {
@@ -26,6 +26,7 @@ const baseSettings: AccessibilitySettings = {
   globalVolume: 80,
   dyslexiaFont: false,
   autoRead: false,
+  sensoryProfile: 'standard',
 };
 
 export const InteractivePreview: Story = {
@@ -102,4 +103,50 @@ export const InteractivePreview: Story = {
       </ThemeProvider>
     );
   },
+};
+
+const ThemePreview: React.FC<{ variant: ThemeVariant }> = ({ variant }) => {
+  const theme = useMemo(() => createAppTheme(baseSettings, variant), [variant]);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Box
+        sx={{
+          p: 3,
+          bgcolor: 'background.default',
+          color: 'text.primary',
+          borderRadius: 2,
+          minWidth: 320,
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          Mode : {variant}
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Aperçu des couleurs, contrastes et polices pour le mode sélectionné.
+        </Typography>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Chip label="Primaire" color="primary" sx={{ minHeight: 44 }} />
+          <Chip label="Secondaire" color="secondary" sx={{ minHeight: 44 }} />
+          <Chip label="Accent" variant="outlined" sx={{ minHeight: 44 }} />
+        </Stack>
+      </Box>
+    </ThemeProvider>
+  );
+};
+
+export const ModeStandard: Story = {
+  render: () => <ThemePreview variant="default" />,
+};
+
+export const ModeHauteContraste: Story = {
+  render: () => <ThemePreview variant="high-contrast" />,
+};
+
+export const ModeDyslexie: Story = {
+  render: () => <ThemePreview variant="dyslexia" />,
+};
+
+export const ModeHypersensibilite: Story = {
+  render: () => <ThemePreview variant="hypersensitive" />,
 };

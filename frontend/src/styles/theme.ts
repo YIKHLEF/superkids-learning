@@ -1,6 +1,35 @@
 import { createTheme, darken, lighten } from '@mui/material/styles';
 import { AccessibilitySettings } from '../types';
 
+export type ThemeVariant = 'default' | 'high-contrast' | 'dyslexia' | 'hypersensitive';
+
+const themeVariants: Record<ThemeVariant, Partial<AccessibilitySettings>> = {
+  default: {},
+  'high-contrast': {
+    highContrast: true,
+    contrastLevel: 'maximum',
+    palette: 'monochrome',
+    colorScheme: 'dark',
+  },
+  dyslexia: {
+    dyslexiaFont: true,
+    fontSize: 'large',
+    contrastLevel: 'high',
+  },
+  hypersensitive: {
+    sensoryProfile: 'hypersensitive',
+    reducedMotion: true,
+    animationsEnabled: false,
+    soundEnabled: false,
+    audioCuesEnabled: false,
+    highContrast: false,
+    contrastLevel: 'standard',
+    palette: 'calm',
+    colorScheme: 'light',
+    globalVolume: 0,
+  },
+};
+
 const palettePresets = {
   calm: {
     primary: { main: '#A8D5E2', light: '#C8E5F0', dark: '#88B5C2' },
@@ -64,12 +93,36 @@ const getPaletteWithContrast = (presetKey: AccessibilitySettings['palette'], con
   };
 };
 
-export const createAppTheme = (accessibility: AccessibilitySettings) => {
-  const palette = getPaletteWithContrast(accessibility.palette, accessibility.highContrast ? 'maximum' : accessibility.contrastLevel);
-  const mode = accessibility.colorScheme === 'auto' ? 'light' : accessibility.colorScheme;
-  const fontFamily = accessibility.dyslexiaFont
+const mergeVariantWithAccessibility = (
+  accessibility: AccessibilitySettings,
+  variant: ThemeVariant,
+): AccessibilitySettings => {
+  const overrides = themeVariants[variant];
+  const merged = { ...accessibility, ...overrides };
+  if (variant === 'hypersensitive') {
+    merged.reducedMotion = true;
+    merged.animationsEnabled = false;
+    merged.soundEnabled = false;
+    merged.audioCuesEnabled = false;
+  }
+  if (variant === 'high-contrast') {
+    merged.highContrast = true;
+    merged.contrastLevel = 'maximum';
+  }
+  return merged;
+};
+
+export const createAppTheme = (accessibility: AccessibilitySettings, variant: ThemeVariant = 'default') => {
+  const mergedAccessibility = mergeVariantWithAccessibility(accessibility, variant);
+  const palette = getPaletteWithContrast(
+    mergedAccessibility.palette,
+    mergedAccessibility.highContrast ? 'maximum' : mergedAccessibility.contrastLevel,
+  );
+  const mode = mergedAccessibility.colorScheme === 'auto' ? 'light' : mergedAccessibility.colorScheme;
+  const fontFamily = mergedAccessibility.dyslexiaFont
     ? '"OpenDyslexic", "Arial", sans-serif'
     : '"Arial", "Verdana", sans-serif';
+  const motionAwareTransition = mergedAccessibility.reducedMotion ? 'none' : undefined;
 
   return createTheme({
     palette: {
@@ -84,15 +137,15 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
     },
     typography: {
       fontFamily,
-      fontSize: fontSizeMap[accessibility.fontSize],
+      fontSize: fontSizeMap[mergedAccessibility.fontSize],
       h1: { fontSize: '2.5rem', fontWeight: 600, lineHeight: 1.5 },
       h2: { fontSize: '2rem', fontWeight: 600, lineHeight: 1.5 },
       h3: { fontSize: '1.75rem', fontWeight: 600, lineHeight: 1.5 },
       h4: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.5 },
       body1: {
-        fontSize: `${fontSizeMap[accessibility.fontSize] / 16}rem`,
-        lineHeight: accessibility.dyslexiaFont ? 2 : 1.8,
-        letterSpacing: accessibility.dyslexiaFont ? '0.04em' : undefined,
+        fontSize: `${fontSizeMap[mergedAccessibility.fontSize] / 16}rem`,
+        lineHeight: mergedAccessibility.dyslexiaFont ? 2 : 1.8,
+        letterSpacing: mergedAccessibility.dyslexiaFont ? '0.04em' : undefined,
       },
       button: {
         textTransform: 'none',
@@ -103,6 +156,17 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
     spacing: 8,
     shape: { borderRadius: 12 },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            '@media (prefers-reduced-motion: reduce)': {
+              scrollBehavior: 'auto',
+              animation: 'none !important',
+              transition: 'none !important',
+            },
+          },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
@@ -112,14 +176,17 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
             fontSize: '1rem',
             borderRadius: '12px',
             boxShadow: 'none',
-            transition: accessibility.reducedMotion ? 'none' : undefined,
+            transition: motionAwareTransition,
             '&:hover': {
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            },
+            '@media (prefers-reduced-motion: reduce)': {
+              transition: 'none',
             },
           },
           contained: {
             '&:active': {
-              transform: accessibility.reducedMotion ? 'none' : 'scale(0.98)',
+              transform: mergedAccessibility.reducedMotion ? 'none' : 'scale(0.98)',
             },
           },
         },
@@ -129,7 +196,14 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
           root: {
             borderRadius: '16px',
             padding: '24px',
-            boxShadow: accessibility.reducedMotion ? '0 1px 4px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.08)',
+            boxShadow:
+              mergedAccessibility.reducedMotion || mergedAccessibility.sensoryProfile === 'hypersensitive'
+                ? '0 1px 4px rgba(0,0,0,0.08)'
+                : '0 2px 12px rgba(0,0,0,0.08)',
+            '@media (prefers-reduced-motion: reduce)': {
+              transition: 'none',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            },
           },
         },
       },
@@ -139,7 +213,10 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px',
               fontSize: '1rem',
-              transition: accessibility.reducedMotion ? 'none' : undefined,
+              transition: motionAwareTransition,
+              '@media (prefers-reduced-motion: reduce)': {
+                transition: 'none',
+              },
             },
           },
         },
@@ -149,7 +226,10 @@ export const createAppTheme = (accessibility: AccessibilitySettings) => {
           root: {
             minWidth: '44px',
             minHeight: '44px',
-            transition: accessibility.reducedMotion ? 'none' : undefined,
+            transition: motionAwareTransition,
+            '@media (prefers-reduced-motion: reduce)': {
+              transition: 'none',
+            },
           },
         },
       },
