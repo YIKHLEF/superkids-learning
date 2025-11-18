@@ -10,7 +10,22 @@ interface InfoCardProps {
 }
 
 const InfoCard: React.FC<InfoCardProps> = ({ title, subtitle, description, badges = [], action }) => (
-  <Card elevation={1} aria-label={`${title} card`}>
+  <Card
+    elevation={1}
+    aria-label={`${title} card`}
+    component="article"
+    tabIndex={0}
+    sx={{
+      outline: 'none',
+      minHeight: 44,
+      '@media (prefers-reduced-motion: reduce)': {
+        transition: 'none',
+      },
+      '&:focus-visible': {
+        boxShadow: '0 0 0 3px rgba(93, 139, 244, 0.35)',
+      },
+    }}
+  >
     <CardHeader
       title={
         <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>

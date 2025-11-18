@@ -15,8 +15,14 @@ const AccessibleButton: React.FC<AccessibleButtonProps> = ({ description, childr
         letterSpacing: '0.01em',
         minWidth: 120,
         minHeight: 48,
+        touchAction: 'manipulation',
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+          transform: 'none',
+        },
         ...(props.sx || {}),
       }}
+      disableRipple
     >
       {children}
     </Button>

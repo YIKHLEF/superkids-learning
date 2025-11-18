@@ -27,8 +27,8 @@ const LoadingFallback = () => (
 );
 
 const AppContent: React.FC = () => {
-  const accessibility = useSelector((state: RootState) => state.settings.accessibility);
-  const theme = createAppTheme(accessibility);
+  const { accessibility, theme: themeVariant } = useSelector((state: RootState) => state.settings);
+  const theme = createAppTheme(accessibility, themeVariant);
 
   return (
     <ThemeProvider theme={theme}>

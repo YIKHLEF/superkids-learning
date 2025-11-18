@@ -35,6 +35,8 @@ const Modal: React.FC<ModalProps> = ({
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
+      aria-modal="true"
+      transitionDuration={{ enter: 150, exit: 100 }}
       PaperProps={{
         sx: {
           borderRadius: 3,
@@ -55,6 +57,9 @@ const Modal: React.FC<ModalProps> = ({
                 color: 'text.secondary',
                 minWidth: 44,
                 minHeight: 44,
+                '@media (prefers-reduced-motion: reduce)': {
+                  transition: 'none',
+                },
               }}
             >
               <CloseIcon />

@@ -233,4 +233,5 @@ export interface AccessibilitySettings {
   globalVolume: number;
   dyslexiaFont: boolean;
   autoRead: boolean;
+  sensoryProfile?: 'standard' | 'hypersensitive';
 }

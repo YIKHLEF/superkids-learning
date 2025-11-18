@@ -1,9 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AccessibilitySettings } from '../../types';
+import { ThemeVariant } from '../../styles/theme';
 
 interface SettingsState {
   accessibility: AccessibilitySettings;
-  theme: 'default' | 'highContrast' | 'dyslexia';
+  theme: ThemeVariant;
 }
 
 const initialState: SettingsState = {
@@ -21,6 +22,7 @@ const initialState: SettingsState = {
     globalVolume: 80,
     dyslexiaFont: false,
     autoRead: false,
+    sensoryProfile: 'standard',
   },
   theme: 'default',
 };
@@ -38,17 +40,30 @@ const settingsSlice = createSlice({
         (state.accessibility[key] as boolean) = !state.accessibility[key];
       }
     },
-    setTheme: (state, action: PayloadAction<'default' | 'highContrast' | 'dyslexia'>) => {
+    setTheme: (state, action: PayloadAction<ThemeVariant>) => {
       state.theme = action.payload;
-      if (action.payload === 'highContrast') {
+      if (action.payload === 'high-contrast') {
         state.accessibility.highContrast = true;
-        state.accessibility.contrastLevel = 'high';
+        state.accessibility.contrastLevel = 'maximum';
         state.accessibility.palette = 'monochrome';
+        state.accessibility.colorScheme = 'dark';
       } else if (action.payload === 'dyslexia') {
         state.accessibility.dyslexiaFont = true;
         state.accessibility.fontSize = 'large';
+        state.accessibility.highContrast = false;
+      } else if (action.payload === 'hypersensitive') {
+        state.accessibility.sensoryProfile = 'hypersensitive';
+        state.accessibility.reducedMotion = true;
+        state.accessibility.animationsEnabled = false;
+        state.accessibility.soundEnabled = false;
+        state.accessibility.audioCuesEnabled = false;
+        state.accessibility.globalVolume = 0;
+        state.accessibility.palette = 'calm';
+        state.accessibility.highContrast = false;
+        state.accessibility.contrastLevel = 'standard';
       } else {
         state.accessibility.highContrast = false;
+        state.accessibility.sensoryProfile = 'standard';
       }
     },
     setFontSize: (state, action: PayloadAction<AccessibilitySettings['fontSize']>) => {
