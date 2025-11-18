@@ -17,10 +17,12 @@ import {
   IconButton,
 } from '@mui/material';
 import { Send as SendIcon, AttachFile as AttachIcon } from '@mui/icons-material';
+import Notification from '../components/Common/Notification';
 
 const MessagesPage: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>('1');
   const [messageText, setMessageText] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const conversations = [
     {
@@ -80,11 +82,19 @@ const MessagesPage: React.FC = () => {
     if (messageText.trim()) {
       console.log('Sending message:', messageText);
       setMessageText('');
+      setShowToast(true);
     }
   };
 
   return (
     <Box>
+      <Notification
+        open={showToast}
+        message="Message envoyé avec succès"
+        severity="success"
+        onClose={() => setShowToast(false)}
+        autoHideDuration={3000}
+      />
       <Typography variant="h4" sx={{ fontWeight: 600, mb: 4 }}>
         Messages
       </Typography>

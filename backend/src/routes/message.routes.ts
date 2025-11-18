@@ -4,7 +4,10 @@ import {
   sendMessage,
   markAsRead,
   deleteMessage,
+  uploadAttachments,
 } from '../controllers/message.controller';
+import { authenticateToken } from '../middleware/auth';
+import { secureUpload } from '../middleware/secureUpload';
 
 const router = Router();
 
@@ -66,7 +69,7 @@ const router = Router();
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/user/:userId', getMessages);
+router.get('/user/:userId', authenticateToken, getMessages);
 
 /**
  * @openapi
@@ -132,7 +135,7 @@ router.get('/user/:userId', getMessages);
  *       404:
  *         description: Destinataire introuvable
  */
-router.post('/', sendMessage);
+router.post('/', authenticateToken, sendMessage);
 
 /**
  * @openapi
@@ -176,7 +179,7 @@ router.post('/', sendMessage);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.patch('/:messageId/read', markAsRead);
+router.patch('/:messageId/read', authenticateToken, markAsRead);
 
 /**
  * @openapi
@@ -218,6 +221,14 @@ router.patch('/:messageId/read', markAsRead);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:messageId', deleteMessage);
+router.delete('/:messageId', authenticateToken, deleteMessage);
+
+// Upload sécurisé des pièces jointes
+router.post(
+  '/attachments/upload',
+  authenticateToken,
+  secureUpload.array('attachments', 5),
+  uploadAttachments
+);
 
 export default router;

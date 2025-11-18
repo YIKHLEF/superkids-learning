@@ -20,7 +20,7 @@ SuperKids Learning est une application web d'apprentissage conçue spécifiqueme
 - **API**: RESTful API
 - **Base de données**: PostgreSQL 15+ avec Prisma ORM
 - **Authentication**: JWT (JSON Web Tokens)
-- **Real-time**: Socket.io pour la messagerie en temps réel
+- **Real-time**: Socket.io pour la messagerie en temps réel et notifications de lecture
 - **Logging**: Winston
 
 ### Récompenses et progression
