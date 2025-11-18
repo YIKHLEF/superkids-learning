@@ -8,6 +8,8 @@ import {
 } from '../controllers/message.controller';
 import { authenticateToken } from '../middleware/auth';
 import { secureUpload } from '../middleware/secureUpload';
+import { auditLog } from '../middleware/audit';
+import { AuditAction } from '../services/audit.service';
 
 const router = Router();
 
@@ -69,7 +71,12 @@ const router = Router();
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/user/:userId', authenticateToken, getMessages);
+router.get(
+  '/user/:userId',
+  authenticateToken,
+  auditLog(AuditAction.MESSAGE_READ, undefined, (req) => ({ userId: req.params.userId })),
+  getMessages
+);
 
 /**
  * @openapi
@@ -135,7 +142,12 @@ router.get('/user/:userId', authenticateToken, getMessages);
  *       404:
  *         description: Destinataire introuvable
  */
-router.post('/', authenticateToken, sendMessage);
+router.post(
+  '/',
+  authenticateToken,
+  auditLog(AuditAction.MESSAGE_SEND, undefined, (req) => ({ recipientId: req.body?.recipientId })),
+  sendMessage
+);
 
 /**
  * @openapi
@@ -179,7 +191,12 @@ router.post('/', authenticateToken, sendMessage);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.patch('/:messageId/read', authenticateToken, markAsRead);
+router.patch(
+  '/:messageId/read',
+  authenticateToken,
+  auditLog(AuditAction.MESSAGE_READ, undefined, (req) => ({ messageId: req.params.messageId })),
+  markAsRead
+);
 
 /**
  * @openapi
@@ -221,13 +238,19 @@ router.patch('/:messageId/read', authenticateToken, markAsRead);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:messageId', authenticateToken, deleteMessage);
+router.delete(
+  '/:messageId',
+  authenticateToken,
+  auditLog(AuditAction.MESSAGE_DELETE, undefined, (req) => ({ messageId: req.params.messageId })),
+  deleteMessage
+);
 
 // Upload sécurisé des pièces jointes
 router.post(
   '/attachments/upload',
   authenticateToken,
   secureUpload.array('attachments', 5),
+  auditLog(AuditAction.FILE_UPLOAD, undefined, (req) => ({ count: (req.files as any)?.length || 0 })),
   uploadAttachments
 );
 

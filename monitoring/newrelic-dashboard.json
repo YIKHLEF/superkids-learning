@@ -1,0 +1,26 @@
+{
+  "name": "SuperKids Backend Security",
+  "description": "Surveillance RGPD/COPPA et surface d'attaque",
+  "widgets": [
+    {
+      "title": "Temps de réponse API (p95)",
+      "visualization": "line",
+      "nrql": "SELECT percentile(duration, 95) FROM Transaction WHERE appName = 'superkids-backend' TIMESERIES"
+    },
+    {
+      "title": "Headers de sécurité manquants",
+      "visualization": "billboard",
+      "nrql": "SELECT count(*) FROM Log WHERE message LIKE '%helmet%' AND level = 'warn' SINCE 15 minutes ago"
+    },
+    {
+      "title": "Consentements manquants (412)",
+      "visualization": "billboard",
+      "nrql": "SELECT count(*) FROM Transaction WHERE appName = 'superkids-backend' AND httpResponseCode = '412' SINCE 1 day ago"
+    },
+    {
+      "title": "Requêtes CORS refusées",
+      "visualization": "line",
+      "nrql": "SELECT count(*) FROM Log WHERE message LIKE '%CORS%' FACET request.uri TIMESERIES"
+    }
+  ]
+}

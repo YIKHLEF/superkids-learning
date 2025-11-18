@@ -22,6 +22,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import { metricsHandler, prometheusMiddleware } from './middleware/prometheus';
 import { logger } from './utils/logger';
+import { enforceDataProtectionHeaders } from './middleware/compliance';
 
 // Services
 import { SocketService } from './services/socket.service';
@@ -76,6 +77,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(enforceDataProtectionHeaders());
 app.use(prometheusMiddleware);
 app.use(rateLimiter);
 

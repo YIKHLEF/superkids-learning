@@ -30,37 +30,45 @@ const getUserAgent = (req: Request): string => {
 /**
  * Middleware générique d'audit
  */
-export const auditLog = (action: AuditAction, severity: AuditSeverity = AuditSeverity.INFO) => {
+export const auditLog = (
+  action: AuditAction,
+  severity: AuditSeverity = AuditSeverity.INFO,
+  metadataBuilder?: (req: Request, res: Response) => Record<string, any>
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const userId = (req as any).user?.id;
-    const ipAddress = getIpAddress(req);
-    const userAgent = getUserAgent(req);
+    const startedAt = Date.now();
 
-    // Capture la réponse
-    const originalSend = res.send;
-    res.send = function (data: any): Response {
+    res.on('finish', () => {
+      const userId = (req as any).user?.id || (req as any).user?.userId;
+      const ipAddress = getIpAddress(req);
+      const userAgent = getUserAgent(req);
       const success = res.statusCode >= 200 && res.statusCode < 400;
+      const resolvedSeverity = success ? severity : AuditSeverity.WARNING;
 
-      // Log l'action de manière asynchrone
-      auditService.log({
-        action,
-        userId,
-        severity,
-        ipAddress,
-        userAgent,
-        success,
-        metadata: {
-          path: req.path,
-          method: req.method,
-          statusCode: res.statusCode,
-        },
-      }).catch((error) => {
-        // Ne pas bloquer la requête en cas d'erreur d'audit
-        console.error('Audit log error:', error);
-      });
+      const baseMetadata = {
+        path: req.originalUrl || req.path,
+        method: req.method,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      };
 
-      return originalSend.call(this, data);
-    };
+      const extraMetadata = metadataBuilder ? metadataBuilder(req, res) : {};
+
+      auditService
+        .log({
+          action,
+          userId,
+          severity: resolvedSeverity,
+          ipAddress,
+          userAgent,
+          success,
+          metadata: { ...baseMetadata, ...extraMetadata },
+        })
+        .catch((error) => {
+          // Ne pas bloquer la requête en cas d'erreur d'audit
+          console.error('Audit log error:', error);
+        });
+    });
 
     next();
   };

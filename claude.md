@@ -21,7 +21,8 @@ SuperKids Learning est une application web d'apprentissage conçue spécifiqueme
 - **Base de données**: PostgreSQL 15+ avec Prisma ORM
 - **Authentication**: JWT (JSON Web Tokens)
 - **Real-time**: Socket.io pour la messagerie en temps réel et notifications de lecture
-- **Logging**: Winston
+- **Logging**: Winston (+ export conditionnel Datadog/New Relic en production via `ENABLE_PROD_TELEMETRY=true`)
+- **Conformité**: middlewares RGPD/COPPA (`enforceDataProtectionHeaders`, `requireParentalConsent`, `anonymizeResponse`)
 
 ### Récompenses et progression
 - Les modèles Prisma `Reward` et `Progress` suivent une typologie unifiée (`RewardType`) pour différencier badges, avatars, thèmes et célébrations.

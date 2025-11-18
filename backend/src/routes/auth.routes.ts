@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { register, login, logout, getCurrentUser } from '../controllers/auth.controller';
 import { authLimiter } from '../middleware/rateLimiter';
+import { auditLog } from '../middleware/audit';
+import { AuditAction } from '../services/audit.service';
 
 const router = Router();
 
@@ -138,7 +140,12 @@ router.post('/register', authLimiter, register);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', authLimiter, login);
+router.post(
+  '/login',
+  authLimiter,
+  auditLog(AuditAction.USER_LOGIN, undefined, (req) => ({ email: req.body?.email })),
+  login
+);
 
 /**
  * @openapi
