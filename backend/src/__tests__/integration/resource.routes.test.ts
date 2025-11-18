@@ -61,6 +61,7 @@ describe('Resource Routes Integration Tests', () => {
             tags: ['test'],
             language: 'fr',
             ageRange: [5, 10],
+            isFavorite: i === 0,
           },
         });
       }
@@ -79,7 +80,7 @@ describe('Resource Routes Integration Tests', () => {
       expect(response.body.pagination).toHaveProperty('page');
       expect(response.body.pagination).toHaveProperty('limit');
       expect(response.body.pagination).toHaveProperty('total');
-      expect(response.body.pagination).toHaveProperty('pages');
+      expect(response.body.pagination).toHaveProperty('totalPages');
     });
 
     it('should filter resources by type', async () => {
@@ -117,6 +118,7 @@ describe('Resource Routes Integration Tests', () => {
           tags: ['test'],
           language: 'fr',
           ageRange: [5, 10],
+          isFavorite: false,
         },
       });
     });
@@ -154,6 +156,7 @@ describe('Resource Routes Integration Tests', () => {
           tags: ['émotions', 'joie', 'tristesse'],
           language: 'fr',
           ageRange: [5, 8],
+          isFavorite: false,
         },
       });
     });
@@ -220,6 +223,19 @@ describe('Resource Routes Integration Tests', () => {
         .get(`/api/resources/${fakeId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
+    });
+  });
+
+  describe('PATCH /api/resources/:id/favorite', () => {
+    it('should toggle favorite flag', async () => {
+      const response = await request(app)
+        .patch(`/api/resources/${resourceId}/favorite`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ isFavorite: true })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.isFavorite).toBe(true);
     });
   });
 });
