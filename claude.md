@@ -3220,6 +3220,31 @@ Propriétaire - Tous droits réservés
 **Version Actuelle**: 1.1.0-dev
 **Statut**: Phases 3.1-3.4, 3.6-3.8 complétées - Sécurité + Performance + CI/CD/Monitoring prêts prod !
 
+## Analyse des écarts fonctionnels vs. spécifications (jan 2026)
+
+### Manquants majeurs identifiés
+
+1. **Activités interactives EBPs non livrées**: la spécification demande des jeux d'émotions, scénarios sociaux vidéo-modélisés, tableaux CAA, activités académiques adaptatives et routines d'autonomie (horaires visuels, checklists).【F:Application_Apprentissage_Autisme_Specifications.md†L226-L274】 L'application n'expose aujourd'hui que des pages génériques (Dashboard, Activities, Profile, Analytics, Resources, Messages) sans écrans ni contenus dédiés à ces activités ou à la personnalisation par domaine.【F:frontend/src/App.tsx†L10-L90】
+2. **Suivi avancé et rapports manquants**: le cahier des charges exige des tableaux de bord détaillés avec alertes, PDF téléchargeables et suggestions IA basées sur l'historique.【F:Application_Apprentissage_Autisme_Specifications.md†L290-L305】 Le backend/ frontend ne fournissent ni génération de rapports (PDF/CSV), ni alertes automatisées, ni comparaisons IEP visibles dans les pages actuelles.【F:frontend/src/App.tsx†L10-L90】
+3. **Collaboration étendue absente**: aucune vue ou API pour calendrier partagé, objectifs collaboratifs ou forum d'experts, alors que ces fonctions sont requises pour la communication multi-acteurs.【F:Application_Apprentissage_Autisme_Specifications.md†L334-L344】【F:frontend/src/App.tsx†L10-L90】
+
+### Plan exhaustif de mise en œuvre (avec tests)
+
+1. **Suite d'activités interactives conformes EBPs**
+   - Construire des pages/ composants dédiés : émotion (jeux d'association visuelle), scénarios sociaux vidéo-modélisés, tableaux CAA configurables, puzzles/logiques et routines d'autonomie avec horaires visuels.
+   - Étendre le backend `activity` pour servir les contenus multimédias, stocker les progrès par compétence et gérer les préférences sensorielles par type d'activité.
+   - **Tests**: tests RTL pour chaque composant interactif (accessibilité ARIA, feedback positif, navigation clavier), tests Jest de logique d'adaptation (sélection de niveau/difficulté), tests d'intégration API (création/session/complétion d'activité) et snapshot de configuration CAA.
+
+2. **Suivi, alertes et rapports exportables**
+   - Ajouter un service `reporting` backend générant PDF/CSV (progression, comparaison IEP, temps passé) et endpoints sécurisés; côté frontend, tableau de bord Analytics avec alertes (seuils de régression, streaks cassés) et téléchargement des rapports.
+   - Intégrer recommandations IA (brancher `AdaptiveService` aux métriques historiques) et notifications en temps réel via Socket.io pour alertes de progression.
+   - **Tests**: tests unitaires sur la génération de rapports (schémas de données, formats), tests e2e API pour export PDF/CSV et contrôle d'accès, tests RTL sur les graphiques/alertes (mock store), tests de contrats pour le flux de recommandations.
+
+3. **Collaboration calendrier + forum expert**
+   - Créer un module calendrier partagé (backend CRUD événements/objectifs, frontend vue calendrier avec filtres rôle/utilisateur) et un système de notes collaboratives liées aux profils/enfants.
+   - Ajouter un forum/question-réponse modéré (threads, votes utiles, signalement) exposé via routes dédiées et composant UI; inclure permissions RBAC existantes.
+   - **Tests**: tests API calendrier (création, mise à jour, visibilité par rôle), tests Socket/io ou polling pour synchronisation temps réel, tests RTL sur vues calendrier & forum (accessibilité, formulaires), tests de sécurité sur permissions et anti-spam.
+
 ## Scans de sécurité automatisés
 
 - Un workflow GitHub Actions `Security - ZAP Baseline` démarre l'API locale sur le port 5000, lance le scan ZAP baseline et publie les rapports HTML/JSON comme artefacts.
