@@ -1,11 +1,21 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { AppBar, Toolbar, Typography, IconButton, Box, Avatar } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Box,
+  Avatar,
+  Badge,
+} from '@mui/material';
 import { Settings as SettingsIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
 import { RootState } from '../../store';
 
 const Header: React.FC = () => {
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
+
+  const unreadMessages = 3;
 
   return (
     <AppBar
@@ -29,7 +39,9 @@ const Header: React.FC = () => {
             aria-label="notifications"
             sx={{ minWidth: 44, minHeight: 44 }}
           >
-            <NotificationsIcon />
+            <Badge color="error" badgeContent={unreadMessages} overlap="circular">
+              <NotificationsIcon />
+            </Badge>
           </IconButton>
 
           <IconButton

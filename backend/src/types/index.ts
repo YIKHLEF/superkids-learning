@@ -231,7 +231,7 @@ export interface SendMessageDTO {
   recipientId: string;
   subject: string;
   content: string;
-  attachments?: string[];
+  attachments?: (UploadMetadata | string)[];
 }
 
 // ============ Error Types ============

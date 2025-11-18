@@ -214,9 +214,12 @@ model Message {
   subject       String
   content       String
   read          Boolean   @default(false)
-  attachments   String[]
+  readAt        DateTime?
+  attachments   Json      @default("[]")
+  participants  String[]  @default([])
 
   createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@map("messages")
 }

@@ -1,5 +1,5 @@
 import { PrismaClient, Message } from '@prisma/client';
-import { SendMessageDTO, AppError } from '../types';
+import { SendMessageDTO, AppError, PaginationOptions } from '../types';
 import { logger } from '../utils/logger';
 
 export class MessageService {
@@ -12,14 +12,27 @@ export class MessageService {
   /**
    * Obtenir tous les messages d'un utilisateur (envoyés et reçus)
    */
-  async getUserMessages(userId: string): Promise<{
+  async getUserMessages(
+    userId: string,
+    options: PaginationOptions = {}
+  ): Promise<{
     sent: Message[];
     received: Message[];
+    totalSent: number;
+    totalReceived: number;
+    unreadCount: number;
   }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(50, options.limit || 20);
+    const skip = (page - 1) * limit;
+
     try {
-      const [sentMessages, receivedMessages] = await Promise.all([
+      const [sentMessages, receivedMessages, sentCount, receivedCount, unreadCount] =
+        await Promise.all([
         this.prisma.message.findMany({
           where: { senderId: userId },
+          skip,
+          take: limit,
           include: {
             recipient: {
               select: {
@@ -34,6 +47,8 @@ export class MessageService {
         }),
         this.prisma.message.findMany({
           where: { recipientId: userId },
+          skip,
+          take: limit,
           include: {
             sender: {
               select: {
@@ -46,6 +61,9 @@ export class MessageService {
           },
           orderBy: { createdAt: 'desc' },
         }),
+        this.prisma.message.count({ where: { senderId: userId } }),
+        this.prisma.message.count({ where: { recipientId: userId } }),
+        this.getUnreadCount(userId),
       ]);
 
       logger.info(
@@ -55,6 +73,9 @@ export class MessageService {
       return {
         sent: sentMessages,
         received: receivedMessages,
+        totalSent: sentCount,
+        totalReceived: receivedCount,
+        unreadCount,
       };
     } catch (error) {
       logger.error('Erreur lors de la récupération des messages:', error);
@@ -158,6 +179,7 @@ export class MessageService {
           subject: data.subject,
           content: data.content,
           attachments: data.attachments || [],
+          participants: [data.senderId, data.recipientId],
         },
         include: {
           sender: {
@@ -219,7 +241,7 @@ export class MessageService {
 
       const updatedMessage = await this.prisma.message.update({
         where: { id: messageId },
-        data: { read: true },
+        data: { read: true, readAt: new Date() },
         include: {
           sender: {
             select: {
@@ -256,7 +278,7 @@ export class MessageService {
           recipientId: userId,
           read: false,
         },
-        data: { read: true },
+        data: { read: true, readAt: new Date() },
       });
 
       logger.info(`${result.count} messages marqués comme lus pour: ${userId}`);
