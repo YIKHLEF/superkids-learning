@@ -17,6 +17,8 @@ import {
   Analytics as AnalyticsIcon,
   LibraryBooks as ResourcesIcon,
   Message as MessagesIcon,
+  Assessment as ReportsIcon,
+  CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
@@ -26,6 +28,8 @@ const navigationItems = [
   { label: 'Activités', path: '/activities', icon: <ActivitiesIcon /> },
   { label: 'Mon Profil', path: '/profile', icon: <ProfileIcon /> },
   { label: 'Mes Progrès', path: '/analytics', icon: <AnalyticsIcon /> },
+  { label: 'Rapports', path: '/reports', icon: <ReportsIcon /> },
+  { label: 'Collaboration', path: '/collaboration', icon: <CalendarIcon /> },
   { label: 'Ressources', path: '/resources', icon: <ResourcesIcon /> },
   { label: 'Messages', path: '/messages', icon: <MessagesIcon /> },
 ];

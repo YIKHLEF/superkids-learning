@@ -15,6 +15,8 @@ const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const AnalyticsPage = React.lazy(() => import('./pages/AnalyticsPage'));
 const ResourcesPage = React.lazy(() => import('./pages/ResourcesPage'));
 const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
+const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
+const CollaborationPage = React.lazy(() => import('./pages/CollaborationPage'));
 
 // Composants
 import Layout from './components/Layout/Layout';
@@ -67,6 +69,22 @@ const AppContent: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <AnalyticsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <ReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/collaboration"
+                element={
+                  <ProtectedRoute>
+                    <CollaborationPage />
                   </ProtectedRoute>
                 }
               />

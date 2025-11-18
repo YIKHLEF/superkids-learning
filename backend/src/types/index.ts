@@ -179,6 +179,9 @@ export interface AdaptiveEngineResult {
   source: RecommendationSource;
 }
 
+// ============ Reporting Types ============
+export { ReportAlert, ReportSummary } from './reporting';
+
 // ============ Resource Types ============
 export interface ResourceFilters {
   type?: string;
