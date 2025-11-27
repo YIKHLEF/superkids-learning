@@ -47,7 +47,7 @@ export const updateProgress = async (req: Request, res: Response) => {
   });
 };
 
-export const getRewards = async (req: Request, res: Response) => {
+export const getRewards = async (_req: Request, res: Response) => {
   res.json({
     status: 'success',
     data: {
@@ -67,7 +67,7 @@ export const getRewards = async (req: Request, res: Response) => {
 };
 
 export const unlockReward = async (req: Request, res: Response) => {
-  const { childId, rewardId } = req.params;
+  const { childId: _childId, rewardId } = req.params;
 
   res.json({
     status: 'success',

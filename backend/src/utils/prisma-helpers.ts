@@ -215,7 +215,7 @@ export const PrismaOrderBy = {
 /**
  * Récupère uniquement les IDs (très rapide)
  */
-export async function getIdsOnly<T>(
+export async function getIdsOnly(
   model: any,
   where: any = {}
 ): Promise<string[]> {
@@ -233,7 +233,7 @@ export async function getIdsOnly<T>(
 export async function countWithCache(
   model: any,
   where: any = {},
-  cacheKey?: string
+  _cacheKey?: string
 ): Promise<number> {
   // Si une clé de cache est fournie, on pourrait l'utiliser
   // Pour l'instant, simple count

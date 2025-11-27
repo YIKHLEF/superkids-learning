@@ -61,29 +61,37 @@ export const login = async (req: Request, res: Response) => {
       throw new AppError('Email et mot de passe requis', 400);
     }
 
+    const userEmail = email as string;
+    const userPassword = password as string;
+
     // Recherche de l'utilisateur (à implémenter avec Prisma)
     // const user = await prisma.user.findUnique({ where: { email } });
 
     const user = {
       id: 'user-id',
-      email,
+      email: userEmail,
       password: await bcrypt.hash('password', 10),
       role: 'CHILD',
     };
 
     if (!user) {
-      await auditService.logFailedLogin(email, req.ip, req.headers['user-agent'] || 'unknown', 'Utilisateur introuvable');
+      await auditService.logFailedLogin(
+        userEmail,
+        req.ip,
+        (req.headers['user-agent'] as string | undefined) || 'unknown',
+        'Utilisateur introuvable'
+      );
       throw new AppError('Identifiants incorrects', 401);
     }
 
     // Vérification du mot de passe
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(userPassword, user.password);
 
     if (!isPasswordValid) {
       await auditService.logFailedLogin(
-        email,
+        userEmail,
         req.ip,
-        req.headers['user-agent'] || 'unknown',
+        (req.headers['user-agent'] as string | undefined) || 'unknown',
         'Mot de passe invalide'
       );
       throw new AppError('Identifiants incorrects', 401);

@@ -61,14 +61,14 @@ export const requireParentalConsent = (
 };
 
 export const anonymizeResponse = (fields: string[]) => {
-  return (_req: Request, res: Response, next: NextFunction) => {
-    if (!fields.length) return next();
+    return (_req: Request, res: Response, next: NextFunction) => {
+      if (!fields.length) return next();
 
-    const originalJson = res.json;
-    res.json = function (body?: any): Response {
-      const payload = shouldAnonymize() ? scrubFields(body, fields) : body;
-      return originalJson.call(this, payload);
-    } as Response['json'];
+      const originalJson = res.json;
+      res.json = function (this: Response, body?: any): Response {
+        const payload = shouldAnonymize() ? scrubFields(body, fields) : body;
+        return originalJson.call(this, payload);
+      } as Response['json'];
 
     next();
   };

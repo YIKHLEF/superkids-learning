@@ -274,7 +274,7 @@ export class AuditService {
   /**
    * Récupère les logs d'audit pour un utilisateur
    */
-  async getUserAuditLogs(userId: string, limit = 100): Promise<any[]> {
+  async getUserAuditLogs(userId: string, _limit = 100): Promise<any[]> {
     try {
       // Note: Nécessite une table AuditLog dans Prisma schema
       // return await this.prisma.auditLog.findMany({
@@ -292,7 +292,7 @@ export class AuditService {
   /**
    * Récupère les activités suspectes récentes
    */
-  async getSuspiciousActivities(limit = 50): Promise<any[]> {
+  async getSuspiciousActivities(_limit = 50): Promise<any[]> {
     try {
       // Note: Nécessite une table AuditLog dans Prisma schema
       // return await this.prisma.auditLog.findMany({

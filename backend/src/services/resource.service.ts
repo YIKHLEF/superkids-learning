@@ -139,13 +139,13 @@ export class ResourceService {
    */
   async searchResources(query: string, filters?: ResourceFilters): Promise<Resource[]> {
     try {
-      const resources = await this.prisma.resource.findMany({
-        where: {
-          OR: [
-            { title: { search: query } },
-            { description: { search: query } },
-            { tags: { hasSome: [query.toLowerCase()] } },
-          ],
+        const resources = await this.prisma.resource.findMany({
+          where: {
+            OR: [
+              { title: { contains: query, mode: 'insensitive' } },
+              { description: { contains: query, mode: 'insensitive' } },
+              { tags: { hasSome: [query.toLowerCase()] } },
+            ],
           ...(filters?.type && { type: filters.type }),
           ...(filters?.category && { category: filters.category }),
           ...(filters?.tags?.length

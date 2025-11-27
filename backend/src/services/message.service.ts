@@ -153,6 +153,8 @@ export class MessageService {
    */
   async sendMessage(data: SendMessageDTO): Promise<Message> {
     try {
+      const attachments = (data.attachments ?? []) as Prisma.JsonArray;
+
       // Vérifier que l'expéditeur existe
       const sender = await this.prisma.user.findUnique({
         where: { id: data.senderId },
@@ -178,7 +180,7 @@ export class MessageService {
           recipientId: data.recipientId,
           subject: data.subject,
           content: data.content,
-          attachments: data.attachments || [],
+          attachments,
           participants: [data.senderId, data.recipientId],
         },
         include: {

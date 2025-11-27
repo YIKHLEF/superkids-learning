@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
+import { ZodError, ZodTypeAny } from 'zod';
 import { logger } from '../utils/logger';
 
 /**
@@ -16,7 +16,7 @@ interface ValidationError {
  * Formatte les erreurs Zod en un format lisible
  */
 const formatZodErrors = (error: ZodError): ValidationError[] => {
-  return error.errors.map((err) => ({
+  return error.issues.map((err) => ({
     field: err.path.join('.'),
     message: err.message,
   }));
@@ -28,7 +28,7 @@ const formatZodErrors = (error: ZodError): ValidationError[] => {
  * @param source - La source des données à valider ('body', 'query', 'params')
  */
 export const validate = (
-  schema: AnyZodObject,
+  schema: ZodTypeAny,
   source: 'body' | 'query' | 'params' = 'body'
 ) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -75,9 +75,9 @@ export const validate = (
  * Middleware de validation combinée (body + query + params)
  */
 export const validateAll = (schemas: {
-  body?: AnyZodObject;
-  query?: AnyZodObject;
-  params?: AnyZodObject;
+  body?: ZodTypeAny;
+  query?: ZodTypeAny;
+  params?: ZodTypeAny;
 }) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {

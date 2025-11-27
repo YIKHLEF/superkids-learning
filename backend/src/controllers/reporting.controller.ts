@@ -8,7 +8,7 @@ export class ReportingController {
     const reportingService = ServiceFactory.getReportingService();
 
     const summary = await reportingService.getSummary(childId as string | undefined);
-    res.json({ status: 'success', data: summary });
+    return res.json({ status: 'success', data: summary });
   }
 
   async exportReport(req: Request, res: Response) {
@@ -21,15 +21,15 @@ export class ReportingController {
 
     try {
       const csv = await reportingService.exportCsv(childId as string | undefined);
-      res.header('Content-Type', 'text/csv');
-      res.attachment('rapport-progress.csv');
-      res.send(csv);
-    } catch (error) {
-      logger.error('Erreur export rapport', error);
-      res.status(500).json({ message: 'Impossible de générer le rapport' });
+        res.header('Content-Type', 'text/csv');
+        res.attachment('rapport-progress.csv');
+        return res.send(csv);
+      } catch (error) {
+        logger.error('Erreur export rapport', error);
+        return res.status(500).json({ message: 'Impossible de générer le rapport' });
+      }
     }
   }
-}
 
 export default new ReportingController();
 

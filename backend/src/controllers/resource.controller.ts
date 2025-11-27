@@ -59,7 +59,7 @@ export const getResourceById = async (
     const service = ServiceFactory.getResourceService();
     const resource = await service.getResourceById(id);
 
-    res.json({ success: true, data: resource });
+    return res.json({ success: true, data: resource });
   } catch (error) {
     next(error);
   }
@@ -81,7 +81,7 @@ export const searchResources = async (req: Request, res: Response, next: NextFun
       tags: parsedTags.length ? parsedTags : undefined,
     });
 
-    res.json({ success: true, data: resources, count: resources.length });
+    return res.json({ success: true, data: resources, count: resources.length });
   } catch (error) {
     next(error);
   }
@@ -96,7 +96,7 @@ export const uploadResourceAsset = async (
     const service = ServiceFactory.getResourceService();
     const { resource, metadata } = await service.uploadResourceAsset(req.file, req.body);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Ressource importée avec succès',
       data: resource,
@@ -115,7 +115,7 @@ export const toggleFavorite = async (req: Request, res: Response, next: NextFunc
 
     const updated = await service.toggleFavorite(id, Boolean(isFavorite));
 
-    res.json({ success: true, data: updated });
+    return res.json({ success: true, data: updated });
   } catch (error) {
     next(error);
   }
