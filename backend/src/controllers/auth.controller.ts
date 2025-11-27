@@ -75,10 +75,14 @@ export const login = async (req: Request, res: Response) => {
     };
 
     if (!user) {
+      const userAgent = typeof req.headers['user-agent'] === 'string'
+        ? req.headers['user-agent']
+        : 'unknown';
+
       await auditService.logFailedLogin(
         userEmail,
         req.ip,
-        (req.headers['user-agent'] as string | undefined) || 'unknown',
+        userAgent,
         'Utilisateur introuvable'
       );
       throw new AppError('Identifiants incorrects', 401);
@@ -88,10 +92,14 @@ export const login = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(userPassword, user.password);
 
     if (!isPasswordValid) {
+      const userAgent = typeof req.headers['user-agent'] === 'string'
+        ? req.headers['user-agent']
+        : 'unknown';
+
       await auditService.logFailedLogin(
         userEmail,
         req.ip,
-        (req.headers['user-agent'] as string | undefined) || 'unknown',
+        userAgent,
         'Mot de passe invalide'
       );
       throw new AppError('Identifiants incorrects', 401);
@@ -106,11 +114,11 @@ export const login = async (req: Request, res: Response) => {
 
     logger.info(`User logged in: ${email}`);
 
-    await auditService.logSuccessfulLogin(
-      user.id,
-      req.ip,
-      req.headers['user-agent'] || 'unknown'
-    );
+    const userAgent = typeof req.headers['user-agent'] === 'string'
+      ? req.headers['user-agent']
+      : 'unknown';
+
+    await auditService.logSuccessfulLogin(user.id, req.ip, userAgent);
 
     res.json({
       status: 'success',

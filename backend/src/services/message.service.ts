@@ -1,4 +1,4 @@
-import { PrismaClient, Message } from '@prisma/client';
+import { PrismaClient, Message, Prisma } from '@prisma/client';
 import { SendMessageDTO, AppError, PaginationOptions } from '../types';
 import { logger } from '../utils/logger';
 

@@ -204,7 +204,7 @@ export const requirePermission = (
         });
       }
 
-      next();
+      return next();
     } catch (error) {
       logger.error('Error in permission check', { error });
       return res.status(500).json({
@@ -259,7 +259,7 @@ export const requireRole = (roles: UserRole | UserRole[]) => {
         });
       }
 
-      next();
+      return next();
     } catch (error) {
       logger.error('Error in role check', { error });
       return res.status(500).json({
@@ -317,7 +317,7 @@ export const requireOwnership = (resourceIdParam = 'id', _ownerField = 'userId')
         });
       }
 
-      next();
+      return next();
     } catch (error) {
       logger.error('Error in ownership check', { error });
       return res.status(500).json({
@@ -376,7 +376,7 @@ export const requireChildAccess = async (
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     logger.error('Error in child access check', { error });
     return res.status(500).json({

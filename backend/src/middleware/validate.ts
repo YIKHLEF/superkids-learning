@@ -42,7 +42,7 @@ export const validate = (
       // Remplacer les données de la requête par les données validées
       req[source] = validatedData;
 
-      next();
+      return next();
     } catch (error) {
       if (error instanceof ZodError) {
         const formattedErrors = formatZodErrors(error);
@@ -97,7 +97,7 @@ export const validateAll = (schemas: {
       // Valider la query
       if (schemas.query) {
         try {
-          req.query = await schemas.query.parseAsync(req.query);
+          req.query = (await schemas.query.parseAsync(req.query)) as Request['query'];
         } catch (error) {
           if (error instanceof ZodError) {
             errors.push(...formatZodErrors(error));
@@ -108,7 +108,7 @@ export const validateAll = (schemas: {
       // Valider les params
       if (schemas.params) {
         try {
-          req.params = await schemas.params.parseAsync(req.params);
+          req.params = (await schemas.params.parseAsync(req.params)) as Request['params'];
         } catch (error) {
           if (error instanceof ZodError) {
             errors.push(...formatZodErrors(error));
@@ -131,7 +131,7 @@ export const validateAll = (schemas: {
         });
       }
 
-      next();
+      return next();
     } catch (error) {
       logger.error('Unexpected combined validation error', { error });
       return res.status(500).json({
@@ -173,8 +173,8 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
 
   // Sanitize body, query, et params
   if (req.body) req.body = sanitize(req.body);
-  if (req.query) req.query = sanitize(req.query);
-  if (req.params) req.params = sanitize(req.params);
+  if (req.query) req.query = sanitize(req.query) as Request['query'];
+  if (req.params) req.params = sanitize(req.params) as Request['params'];
 
-  next();
+  return next();
 };
