@@ -145,7 +145,7 @@ export const validateAll = (schemas: {
 /**
  * Sanitize les données pour prévenir les injections
  */
-export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+export const sanitizeInput = (req: Request, _res: Response, next: NextFunction) => {
   // Fonction récursive de sanitization
   const sanitize = (obj: any): any => {
     if (typeof obj === 'string') {
