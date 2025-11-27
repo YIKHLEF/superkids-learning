@@ -27,6 +27,7 @@ import {
   RadialLinearScale,
 } from 'chart.js';
 import analyticsService, { AnalyticsSummary } from '../services/analytics.service';
+import { getApiErrorMessage } from '../services/api';
 
 ChartJS.register(
   CategoryScale,
@@ -55,8 +56,9 @@ const AnalyticsPage: React.FC = () => {
         const data = await analyticsService.getEvents(childId);
         setAnalytics(data);
       } catch (err) {
-        console.error('Analytics loading failed', err);
-        setError("Les données d'analyse n'ont pas pu être chargées");
+        const message = getApiErrorMessage(err, 'progress/events');
+        console.error('[Analytics] Chargement impossible', err);
+        setError(`${message}. Visualisation en mode dégradé.`);
         setAnalytics({
           events: [],
           aggregates: {

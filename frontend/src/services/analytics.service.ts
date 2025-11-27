@@ -1,4 +1,4 @@
-import api from './api';
+import api, { getApiErrorMessage, logApiError } from './api';
 import { DifficultyLevel } from '../types';
 
 export type ActivityEventType =
@@ -37,14 +37,24 @@ export interface AnalyticsSummary {
 
 export const analyticsService = {
   async sendEvent(event: ActivityEventPayload) {
-    await api.post('/progress/events', event);
+    try {
+      await api.post('/progress/events', event);
+    } catch (error) {
+      logApiError(error as any, 'progress/events');
+      console.warn('[Analytics] événement conservé côté client (API indisponible).', event);
+    }
   },
 
   async getEvents(childId: string): Promise<AnalyticsSummary> {
-    const { data } = await api.get<{ status: string; data: AnalyticsSummary }>(
-      `/progress/events?childId=${childId}`
-    );
-    return data.data;
+    try {
+      const { data } = await api.get<{ status: string; data: AnalyticsSummary }>(
+        `/progress/events?childId=${childId}`
+      );
+      return data.data;
+    } catch (error) {
+      logApiError(error as any, 'progress/events');
+      throw new Error(getApiErrorMessage(error, 'progress')); 
+    }
   },
 };
 

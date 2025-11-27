@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Box, Grid, Button, Typography, Chip, Stack, Tooltip, IconButton } from '@mui/material';
+import { Alert, Box, Grid, Button, Typography, Chip, Stack, Tooltip, IconButton } from '@mui/material';
 import {
   EmojiPeople as SocialIcon,
   Chat as CommunicationIcon,
@@ -8,7 +8,7 @@ import {
   Favorite as EmotionalIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { ActivityReward, ActivityCategory, DifficultyLevel, AdaptiveContext, SensoryPreference } from '../types';
+import { ActivityReward, ActivityCategory, DifficultyLevel, AdaptiveContext, SensoryPreference, Reward } from '../types';
 import EmotionDragDrop from '../components/activities/EmotionDragDrop';
 import CaaBoard from '../components/activities/CaaBoard';
 import AdaptiveMathGame from '../components/activities/AdaptiveMathGame';
@@ -20,6 +20,28 @@ import { AppDispatch, RootState } from '../store';
 import { applyReward, setError as setRewardError, setInventory, setLoading as setRewardLoading } from '../store/slices/rewardSlice';
 import { addTokens, recordFeedback, unlockReward } from '../store/slices/progressSlice';
 import rewardsService from '../services/rewards.service';
+import { getApiErrorMessage } from '../services/api';
+
+const offlineRewards: Reward[] = [
+  {
+    id: 'offline-badge-1',
+    name: 'Courage',
+    description: 'Badge temporaire lorsque le réseau est indisponible',
+    iconUrl: '/rewards/offline-badge.png',
+    tokensRequired: 0,
+    type: 'BADGE',
+    unlocked: true,
+  },
+  {
+    id: 'offline-theme',
+    name: 'Mode doux',
+    description: 'Thème local appliqué en mode dégradé',
+    iconUrl: '/rewards/offline-theme.png',
+    tokensRequired: 0,
+    type: 'THEME',
+    unlocked: true,
+  },
+];
 
 interface ActivityModule {
   id: string;
@@ -43,6 +65,7 @@ const ActivitiesPage: React.FC = () => {
   const [selectedEbpTag, setSelectedEbpTag] = useState<string>('all');
   const dispatch = useDispatch<AppDispatch>();
   const rewardsLoading = useSelector((state: RootState) => state.rewards.loading);
+  const rewardsError = useSelector((state: RootState) => state.rewards.error);
   const childId = 'demo-child-01';
 
   const adaptiveContext = useMemo<AdaptiveContext>(() => {
@@ -85,7 +108,10 @@ const ActivitiesPage: React.FC = () => {
         const { tokens, rewards } = await rewardsService.getRewards(childId);
         dispatch(setInventory({ tokens, rewards }));
       } catch (err) {
-        dispatch(setRewardError('Impossible de charger les récompenses'));
+        const message = getApiErrorMessage(err, 'récompenses');
+        console.error('[Activities] Chargement des récompenses échoué', err);
+        dispatch(setInventory({ tokens: 10, rewards: offlineRewards }));
+        dispatch(setRewardError(`${message}. Données locales affichées.`));
       } finally {
         dispatch(setRewardLoading(false));
       }
@@ -115,7 +141,9 @@ const ActivitiesPage: React.FC = () => {
         const data = await rewardsService.awardForActivity(childId, reward);
         dispatch(setInventory({ tokens: data.balance, rewards: data.rewards }));
       } catch (err) {
-        dispatch(setRewardError('Synchronisation des récompenses impossible'));
+        const message = getApiErrorMessage(err, 'sauvegarde des récompenses');
+        console.error('[Activities] Synchronisation des récompenses impossible', err);
+        dispatch(setRewardError(`${message}. Progression conservée localement.`));
       } finally {
         dispatch(setRewardLoading(false));
       }
@@ -300,6 +328,12 @@ const ActivitiesPage: React.FC = () => {
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Choisis une activité interactive pour commencer à apprendre en t'amusant!
       </Typography>
+
+      {rewardsError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {rewardsError}
+        </Alert>
+      )}
 
       <Stack
         direction={{ xs: 'column', md: 'row' }}
