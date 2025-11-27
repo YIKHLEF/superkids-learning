@@ -38,4 +38,23 @@ api.interceptors.response.use(
   }
 );
 
+export const logApiError = (error: AxiosError, context: string) => {
+  console.error('[API] Échec de requête', {
+    context,
+    message: error.message,
+    status: error.response?.status,
+    url: error.config?.url,
+    method: error.config?.method,
+    code: error.code,
+  });
+};
+
+export const getApiErrorMessage = (error: unknown, context: string) => {
+  const axiosError = error as AxiosError;
+  const isNetworkIssue = !axiosError.response;
+  return isNetworkIssue
+    ? "Impossible de joindre l'API. Mode dégradé activé pour " + context
+    : `Requête ${context} échouée (code ${axiosError.response?.status ?? 'inconnu'}).`;
+};
+
 export default api;

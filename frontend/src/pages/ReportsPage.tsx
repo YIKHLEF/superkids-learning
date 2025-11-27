@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { SaveAlt as ExportIcon, Warning as WarningIcon, CheckCircle } from '@mui/icons-material';
 import reportingService, { ReportSummary } from '../services/reporting.service';
+import { getApiErrorMessage } from '../services/api';
 
 const ReportsPage: React.FC = () => {
   const [summary, setSummary] = useState<ReportSummary | null>(null);
@@ -30,8 +31,9 @@ const ReportsPage: React.FC = () => {
         const data = await reportingService.fetchSummary(childId);
         setSummary(data);
       } catch (err) {
-        console.error('Report summary failed', err);
-        setError('Impossible de récupérer le rapport de suivi. Données locales affichées.');
+        const message = getApiErrorMessage(err, 'rapports');
+        console.error('[Reports] Chargement du rapport échoué', err);
+        setError(`${message}. Données locales affichées.`);
         setSummary({
           aggregates: {
             totalActivities: 0,
@@ -63,8 +65,9 @@ const ReportsPage: React.FC = () => {
       link.download = 'rapport-progress.csv';
       link.click();
     } catch (err) {
-      console.error('Export failed', err);
-      setError('Export impossible actuellement. Réessaie plus tard.');
+      const message = getApiErrorMessage(err, 'export CSV');
+      console.error('[Reports] Export échoué', err);
+      setError(`${message} Impossible de finaliser le téléchargement.`);
     } finally {
       setDownloading(false);
     }

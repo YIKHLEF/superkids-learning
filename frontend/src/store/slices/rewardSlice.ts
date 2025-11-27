@@ -29,9 +29,16 @@ const rewardSlice = createSlice({
       action: PayloadAction<{ tokens: number; rewards: Reward[] }>
     ) => {
       state.tokens = action.payload.tokens;
-      state.badges = action.payload.rewards.filter((reward) => reward.type === 'badge');
-      state.themes = action.payload.rewards.filter((reward) => reward.type === 'theme');
-      state.avatars = action.payload.rewards.filter((reward) => reward.type === 'avatar');
+      const normalizeType = (type: Reward['type']) => String(type).toLowerCase();
+      state.badges = action.payload.rewards.filter(
+        (reward) => normalizeType(reward.type) === 'badge'
+      );
+      state.themes = action.payload.rewards.filter(
+        (reward) => normalizeType(reward.type) === 'theme'
+      );
+      state.avatars = action.payload.rewards.filter(
+        (reward) => normalizeType(reward.type) === 'avatar'
+      );
       state.error = null;
     },
     applyReward: (state, action: PayloadAction<ActivityReward>) => {

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { getApiErrorMessage, logApiError } from './api';
 import { UserRole } from '../types';
 
 interface LoginCredentials {
@@ -33,38 +33,58 @@ export const authService = {
    * Login user
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', credentials);
-    if (response.data.data.token) {
-      localStorage.setItem('token', response.data.data.token);
+    try {
+      const response = await api.post<AuthResponse>('/auth/login', credentials);
+      if (response.data.data.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      logApiError(error as any, 'auth/login');
+      throw new Error(getApiErrorMessage(error, 'connexion'));
     }
-    return response.data;
   },
 
   /**
    * Register new user
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', data);
-    if (response.data.data.token) {
-      localStorage.setItem('token', response.data.data.token);
+    try {
+      const response = await api.post<AuthResponse>('/auth/register', data);
+      if (response.data.data.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      logApiError(error as any, 'auth/register');
+      throw new Error(getApiErrorMessage(error, "création d'utilisateur"));
     }
-    return response.data;
   },
 
   /**
    * Logout user
    */
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
-    localStorage.removeItem('token');
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      logApiError(error as any, 'auth/logout');
+    } finally {
+      localStorage.removeItem('token');
+    }
   },
 
   /**
    * Get current user
    */
   async getCurrentUser(): Promise<any> {
-    const response = await api.get('/auth/me');
-    return response.data;
+    try {
+      const response = await api.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      logApiError(error as any, 'auth/me');
+      throw new Error(getApiErrorMessage(error, 'profil utilisateur'));
+    }
   },
 
   /**
