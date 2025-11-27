@@ -10,6 +10,8 @@ import {
   FormControl,
   InputLabel,
   CircularProgress,
+  Alert,
+  Button,
 } from '@mui/material';
 import { Line, Bar, Radar } from 'react-chartjs-2';
 import {
@@ -42,14 +44,33 @@ const AnalyticsPage: React.FC = () => {
   const [period, setPeriod] = useState('week');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const childId = 'demo-child';
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const data = await analyticsService.getEvents(childId);
-      setAnalytics(data);
-      setLoading(false);
+      setError(null);
+      try {
+        const data = await analyticsService.getEvents(childId);
+        setAnalytics(data);
+      } catch (err) {
+        console.error('Analytics loading failed', err);
+        setError("Les données d'analyse n'ont pas pu être chargées");
+        setAnalytics({
+          events: [],
+          aggregates: {
+            totalActivities: 0,
+            averageSuccessRate: 0,
+            totalDurationSeconds: 0,
+            emotionalStates: {},
+            attempts: 0,
+            skillAverages: {},
+          },
+        });
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [childId]);
@@ -119,6 +140,19 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <Box>
+      {error && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => setError(null)}>
+              Ignorer
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>

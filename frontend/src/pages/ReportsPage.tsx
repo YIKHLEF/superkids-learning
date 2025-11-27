@@ -19,14 +19,34 @@ const ReportsPage: React.FC = () => {
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const childId = 'demo-child-01';
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const data = await reportingService.fetchSummary(childId);
-      setSummary(data);
-      setLoading(false);
+      setError(null);
+      try {
+        const data = await reportingService.fetchSummary(childId);
+        setSummary(data);
+      } catch (err) {
+        console.error('Report summary failed', err);
+        setError('Impossible de récupérer le rapport de suivi. Données locales affichées.');
+        setSummary({
+          aggregates: {
+            totalActivities: 0,
+            averageSuccessRate: 0,
+            totalDurationMinutes: 0,
+            attempts: 0,
+          },
+          skillAverages: {},
+          emotionalStates: {},
+          alerts: [],
+          iepComparison: [],
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     load();
@@ -35,13 +55,19 @@ const ReportsPage: React.FC = () => {
   const handleExport = async () => {
     if (!summary) return;
     setDownloading(true);
-    const blob = await reportingService.exportCsv(childId);
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'rapport-progress.csv';
-    link.click();
-    setDownloading(false);
+    try {
+      const blob = await reportingService.exportCsv(childId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'rapport-progress.csv';
+      link.click();
+    } catch (err) {
+      console.error('Export failed', err);
+      setError('Export impossible actuellement. Réessaie plus tard.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading || !summary) {
@@ -54,6 +80,11 @@ const ReportsPage: React.FC = () => {
 
   return (
     <Box>
+      {error && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
