@@ -1,19 +1,40 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Container, Grid, Card, CardContent } from '@mui/material';
+import { useDispatch } from 'react-redux';
 import {
   Psychology as BrainIcon,
   Groups as GroupsIcon,
   EmojiEvents as TrophyIcon,
   Accessible as AccessibleIcon,
 } from '@mui/icons-material';
+import { loginSuccess } from '../store/slices/authSlice';
+import { UserRole } from '../types';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const featuresRef = useRef<HTMLDivElement>(null);
 
   const handleScrollToFeatures = () => {
     featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleStartAdventure = () => {
+    const demoSession = {
+      userId: 'demo-user',
+      role: UserRole.PARENT,
+      token: 'demo-token',
+    };
+
+    try {
+      localStorage.setItem('token', demoSession.token);
+    } catch (error) {
+      // If localStorage is unavailable, continue without persistence
+    }
+
+    dispatch(loginSuccess(demoSession));
+    navigate('/dashboard');
   };
 
   const features = [
@@ -79,7 +100,7 @@ const HomePage: React.FC = () => {
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => navigate('/dashboard')}
+                onClick={handleStartAdventure}
                 sx={{
                   px: 4,
                   py: 2,
