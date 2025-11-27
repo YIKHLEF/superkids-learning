@@ -23,13 +23,13 @@ export const getAllResources = async (req: Request, res: Response, next: NextFun
       }
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: resources.data,
       pagination: resources.pagination,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -43,9 +43,9 @@ export const getResourcesByType = async (
     const service = ServiceFactory.getResourceService();
     const resources = await service.getResourcesByType(type);
 
-    res.json({ success: true, data: resources });
+    return res.json({ success: true, data: resources });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -53,7 +53,7 @@ export const getResourceById = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+  ) => {
   try {
     const { id } = req.params;
     const service = ServiceFactory.getResourceService();
@@ -61,7 +61,7 @@ export const getResourceById = async (
 
     return res.json({ success: true, data: resource });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -83,7 +83,7 @@ export const searchResources = async (req: Request, res: Response, next: NextFun
 
     return res.json({ success: true, data: resources, count: resources.length });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -103,7 +103,7 @@ export const uploadResourceAsset = async (
       metadata,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -117,6 +117,6 @@ export const toggleFavorite = async (req: Request, res: Response, next: NextFunc
 
     return res.json({ success: true, data: updated });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
