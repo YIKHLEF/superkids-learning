@@ -54,14 +54,13 @@ const io = new Server<
   ServerToClientEvents,
   InterServerEvents,
   SocketData
->(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-  pingTimeout: 60000,
-  pingInterval: 25000,
+>(httpServer);
+
+// Configurer CORS pour Socket.io séparément
+io.engine.on("headers", (headers: any) => {
+  headers["Access-Control-Allow-Origin"] = process.env.FRONTEND_URL || "https://superkids-learning.vercel.app";
+  headers["Access-Control-Allow-Credentials"] = "true";
+  headers["Access-Control-Allow-Methods"] = "GET,POST";
 });
 
 // Initialiser le service Socket.io
@@ -189,9 +188,9 @@ app.use('/api/reports', reportingRoutes);
 // Gestion des erreurs
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
