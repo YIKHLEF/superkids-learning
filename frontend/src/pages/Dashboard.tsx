@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -22,6 +23,7 @@ import {
 import { RootState } from '../store';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const profile = useSelector((state: RootState) => state.profile.currentProfile);
   const progress = useSelector((state: RootState) => state.progress.progress);
   const lastFeedback = useSelector((state: RootState) => state.progress.lastFeedback);
@@ -161,6 +163,7 @@ const Dashboard: React.FC = () => {
                 fullWidth
                 size="large"
                 sx={{ mb: 1 }}
+                onClick={() => navigate('/activities')}
               >
                 Commencer
               </Button>
