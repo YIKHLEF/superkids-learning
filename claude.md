@@ -24,6 +24,22 @@ SuperKids Learning est une application web d'apprentissage conçue spécifiqueme
 - **Logging**: Winston (+ export conditionnel Datadog/New Relic en production via `ENABLE_PROD_TELEMETRY=true`)
 - **Conformité**: middlewares RGPD/COPPA (`enforceDataProtectionHeaders`, `requireParentalConsent`, `anonymizeResponse`)
 
+## Procédure de déploiement démo (données mock)
+
+Objectif: lancer une instance de validation en quelques minutes avec des données de démonstration créées par `npm run seed`.
+
+1. **Installer Docker et Git sur une VM (Ubuntu/Debian)** : `sudo apt update && sudo apt install -y docker.io docker-compose-plugin git && sudo systemctl enable --now docker`.
+2. **Cloner le dépôt et copier l'environnement mock** : `git clone https://github.com/your-org/superkids-learning.git && cd superkids-learning && cp .env.mock.example .env.mock` (ajustez `JWT_SECRET` si l'URL est publique).
+3. **Démarrer la stack mockée (build + migrations + seed automatisés)** : `./scripts/deploy-mock.sh` combine `docker-compose.yml` et `docker-compose.mock.yml`.
+4. **Accéder et tester** : `http://<IP-ou-domaine>:3000` (comptes `child@example.com` / `password123`, `parent@example.com` / `password123`, `educator@example.com` / `password123`).
+5. **Arrêter/vider** : `docker compose -f docker-compose.yml -f docker-compose.mock.yml down -v`.
+
+Les variables par défaut utilisées pour ce mode se trouvent dans `.env.mock.example` et désactivent la télémétrie de production (`ENABLE_PROD_TELEMETRY=false`, `DATA_ANONYMIZATION=true`).
+
+### Déploiement auto depuis GitHub (Vercel + PaaS)
+- **Frontend Vercel** : Importer le dossier `frontend/` depuis GitHub, définir `VITE_API_URL=https://<votre-backend>/api`, activer les déploiements automatiques sur `main`.
+- **Backend Heroku/Railway/Render** : lier le repo GitHub, définir `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL=https://<nom-projet-vercel>.vercel.app`, puis exécuter `npm run migrate:deploy && npm run seed` en post-déploiement.
+
 ### Récompenses et progression
 - Les modèles Prisma `Reward` et `Progress` suivent une typologie unifiée (`RewardType`) pour différencier badges, avatars, thèmes et célébrations.
 - Les déblocages sont tracés par type (badges, avatars, thèmes) et alimentent les barres de progression hebdomadaires.

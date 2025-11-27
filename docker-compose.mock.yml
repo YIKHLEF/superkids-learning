@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-superkids_mock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mockpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-superkids_learning_mock}
+    volumes:
+      - postgres_mock_data:/var/lib/postgresql/data
+
+  backend:
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ENABLE_PROD_TELEMETRY: "false"
+      DATA_ANONYMIZATION: "true"
+    command: sh -c "npx prisma migrate deploy && npm run seed && npm start"
+
+  frontend:
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+
+volumes:
+  postgres_mock_data:
+    driver: local

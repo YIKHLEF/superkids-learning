@@ -6,6 +6,54 @@ Ce document décrit les différentes méthodes de déploiement de l'application 
 
 ## Options de Déploiement
 
+### Mode démo express (données mock)
+
+Ce mode lance l'application complète avec des données de démonstration (comptes `child@example.com`, `parent@example.com`, `educator@example.com` créés par le seed Prisma) afin de valider rapidement les fonctionnalités sans préparer d'infrastructure.
+
+#### Déploiement en ligne le plus simple (1 VM / VPS)
+
+1. **Installer Docker et Git (Ubuntu/Debian)**
+   ```bash
+   sudo apt update && sudo apt install -y docker.io docker-compose-plugin git
+   sudo systemctl enable --now docker
+   ```
+
+2. **Cloner le dépôt sur le serveur**
+   ```bash
+   git clone https://github.com/your-org/superkids-learning.git
+   cd superkids-learning
+   ```
+
+3. **Préparer l'environnement mock**
+   ```bash
+   cp .env.mock.example .env.mock
+   # Optionnel : définir JWT_SECRET si l'URL sera publique
+   ```
+
+4. **Lancer la stack mockée (build + migrations + seed automatisés)**
+   ```bash
+   ./scripts/deploy-mock.sh
+   ```
+   Le script combine `docker-compose.yml` et `docker-compose.mock.yml`, exécute les migrations et le seed Prisma, puis démarre les services.
+
+5. **Ouvrir les ports (si firewall activé)**
+   ```bash
+   sudo ufw allow 3000/tcp  # Frontend
+   sudo ufw allow 5000/tcp  # API backend
+   ```
+
+6. **Accéder à l'instance**
+   - Frontend : `http://<IP-ou-domaine>:3000`
+   - API : `http://<IP-ou-domaine>:5000/api`
+   - Comptes de test : `child@example.com` / `password123`, `parent@example.com` / `password123`, `educator@example.com` / `password123`
+
+7. **Nettoyer ou arrêter la démo**
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.mock.yml down -v
+   ```
+
+> ⚠️ Le mode mock est prévu pour les validations rapides uniquement. Ne l'exposez pas en production et pensez à ajouter un proxy HTTPS (Caddy/Traefik/Nginx) si l'instance est publique.
+
 ### Option 1: Docker Compose (Recommandé pour début)
 
 Le moyen le plus simple pour déployer l'application complète.
@@ -78,6 +126,33 @@ docker-compose exec -T postgres psql -U superkids superkids_learning < backup.sq
 ### Option 2: Services Cloud Séparés
 
 Déploiement sur des services cloud individuels pour meilleure scalabilité.
+
+#### Déploiement automatique depuis GitHub (Vercel + PaaS backend)
+
+Scénario: vous poussez sur `main`, Vercel reconstruit le frontend et un PaaS (Heroku/Railway/Render) reconstruit l'API.
+
+1. **Préparer le backend**
+   - Créez une base PostgreSQL managée (Supabase, RDS) et récupérez l'URL.
+   - Sur votre PaaS Node (Heroku/Railway/Render), connectez le dépôt GitHub `superkids-learning` et activez le déploiement automatique sur la branche `main`.
+   - Définissez les variables d'environnement du backend dans le dashboard PaaS:
+     - `NODE_ENV=production`
+     - `DATABASE_URL=<url-postgres>`
+     - `JWT_SECRET=<secret-32c>`
+     - `FRONTEND_URL=https://<nom-projet-vercel>.vercel.app`
+   - Ajoutez une commande post-déploiement pour appliquer le schéma: `npm run migrate:deploy && npm run seed`.
+
+2. **Préparer le frontend (Vercel)**
+   - Sur Vercel, « Import Project » depuis GitHub en sélectionnant le dossier `frontend/`.
+   - Configurez l'environnement de production avec `VITE_API_URL=https://<votre-backend>/api` et, si nécessaire, `NODE_ENV=production`.
+   - Activez les **Deploy Hooks** ou la synchronisation automatique sur `main` pour déclencher une build à chaque push.
+
+3. **Connexion croisée**
+   - Dans le backend, exposez `CORS` et `FRONTEND_URL` vers le domaine Vercel afin d'autoriser les requêtes.
+   - Dans Vercel, utilisez `Environment Variables → Preview/Production` pour pointer vers l'URL backend correspondante (ex: préproduction sur `https://staging-api...`).
+
+4. **Validation**
+   - Après chaque push sur `main`, vérifiez la build Vercel et les logs de déploiement PaaS.
+   - Exécutez un smoke test API (`GET /health`) et ouvrez le frontend pour vérifier l'authentification via les comptes seedés si `npm run seed` est activé.
 
 #### Architecture Recommandée
 
