@@ -10,10 +10,23 @@ export class ProgressService {
   }
 
   async recordProgressEvent(event: ActivityEventPayload) {
+    if (!this.isDatabaseConfigured()) {
+      logger.warn(
+        "DATABASE_URL manquant - utilisation de données fictives pour l'analytics de progression"
+      );
+      return this.buildMockAnalytics(event);
+    }
+
     try {
-      const session = await this.upsertSessionFromEvent(event);
+      const session = await this.executeWithTimeout(
+        this.upsertSessionFromEvent(event),
+        'progress.upsertSession'
+      );
       if (event.type === 'success') {
-        await this.applyRewardsForCompletion(session, event);
+        await this.executeWithTimeout(
+          this.applyRewardsForCompletion(session, event),
+          'progress.applyRewards'
+        );
       }
       return this.getProgressAnalytics(event.childId);
     } catch (error) {
@@ -23,16 +36,26 @@ export class ProgressService {
   }
 
   async getProgressAnalytics(childId?: string) {
-    const sessions = await this.prisma.activitySession.findMany({
-      where: childId ? { childId } : {},
-      include: {
-        activity: {
-          select: { category: true, difficulty: true, title: true, id: true },
+    if (!this.isDatabaseConfigured()) {
+      logger.warn(
+        "DATABASE_URL manquant - renvoi de données de progression fictives"
+      );
+      return this.buildMockAnalytics();
+    }
+
+    const sessions = await this.executeWithTimeout(
+      this.prisma.activitySession.findMany({
+        where: childId ? { childId } : {},
+        include: {
+          activity: {
+            select: { category: true, difficulty: true, title: true, id: true },
+          },
         },
-      },
-      orderBy: { startTime: 'desc' },
-      take: 200,
-    });
+        orderBy: { startTime: 'desc' },
+        take: 200,
+      }),
+      'progress.analytics'
+    );
 
     const aggregates = this.buildAnalyticsAggregates(sessions);
     const events = sessions.map((session) => ({
@@ -52,6 +75,65 @@ export class ProgressService {
         title: session.activity?.title,
       },
     }));
+
+    return { events, aggregates };
+  }
+
+  private isDatabaseConfigured() {
+    return Boolean(process.env.DATABASE_URL);
+  }
+
+  private async executeWithTimeout<T>(promise: Promise<T>, context: string) {
+    const timeoutMs = Number(process.env.DB_QUERY_TIMEOUT_MS || 5000);
+
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout ${context} après ${timeoutMs}ms`)), timeoutMs)
+      ),
+    ]);
+  }
+
+  private buildMockAnalytics(event?: ActivityEventPayload) {
+    const fallbackEvent: ActivityEventPayload =
+      event ||
+      ({
+        activityId: 'demo-activity',
+        childId: 'demo-child',
+        type: 'activity_start',
+        timestamp: new Date().toISOString(),
+        difficulty: DifficultyLevel.BEGINNER,
+        attempts: 1,
+        durationSeconds: 120,
+      } as ActivityEventPayload);
+
+    const aggregates = {
+      totalActivities: fallbackEvent.type === 'success' ? 1 : 0,
+      averageSuccessRate: fallbackEvent.successRate ?? 0.75,
+      totalDurationSeconds: fallbackEvent.durationSeconds ?? 120,
+      emotionalStates: fallbackEvent.emotionalState
+        ? { [fallbackEvent.emotionalState]: 1 }
+        : {},
+      attempts: fallbackEvent.attempts ?? 1,
+      skillAverages: {},
+    };
+
+    const events = [
+      {
+        activityId: fallbackEvent.activityId,
+        childId: fallbackEvent.childId,
+        type: fallbackEvent.type,
+        timestamp: fallbackEvent.timestamp,
+        difficulty: fallbackEvent.difficulty || DifficultyLevel.BEGINNER,
+        attempts: fallbackEvent.attempts,
+        successRate: fallbackEvent.successRate ?? 0.75,
+        emotionalState: fallbackEvent.emotionalState,
+        dominantEmotion: fallbackEvent.dominantEmotion,
+        durationSeconds: fallbackEvent.durationSeconds,
+        supportLevel: fallbackEvent.supportLevel,
+        metadata: {},
+      },
+    ];
 
     return { events, aggregates };
   }
