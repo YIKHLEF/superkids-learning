@@ -274,11 +274,11 @@ export const requireRole = (roles: UserRole | UserRole[]) => {
  * Middleware pour vérifier l'ownership des ressources
  * Vérifie si l'utilisateur est le propriétaire de la ressource
  */
-export const requireOwnership = (resourceIdParam = 'id', ownerField = 'userId') => {
+export const requireOwnership = (resourceIdParam = 'id', _ownerField = 'userId') => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = (req as any).user;
-      const resourceId = req.params[resourceIdParam];
+    const user = (req as any).user;
+    const resourceId = req.params[resourceIdParam];
 
       if (!user) {
         return res.status(401).json({

@@ -207,7 +207,7 @@ export const createResourceSchema = z.object({
   url: z.string().url('URL invalide'),
   thumbnailUrl: z.string().url('URL de miniature invalide').optional(),
   tags: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 // ============================================================================

@@ -131,13 +131,13 @@ export class ProfileService {
 
       logger.info(`Profil créé pour l'utilisateur: ${userId}`);
       return profile;
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      if (error instanceof ZodError) {
-        throw new AppError(error.errors[0]?.message || 'Profil invalide', 400);
-      }
+      } catch (error) {
+        if (error instanceof AppError) {
+          throw error;
+        }
+        if (error instanceof ZodError) {
+          throw new AppError(error.issues[0]?.message || 'Profil invalide', 400);
+        }
       logger.error('Erreur lors de la création du profil:', error);
       throw new AppError('Erreur lors de la création du profil', 500);
     }
@@ -196,13 +196,13 @@ export class ProfileService {
 
       logger.info(`Profil mis à jour: ${userId}`);
       return updatedProfile;
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      if (error instanceof ZodError) {
-        throw new AppError(error.errors[0]?.message || 'Données invalides', 400);
-      }
+      } catch (error) {
+        if (error instanceof AppError) {
+          throw error;
+        }
+        if (error instanceof ZodError) {
+          throw new AppError(error.issues[0]?.message || 'Données invalides', 400);
+        }
       logger.error('Erreur lors de la mise à jour du profil:', error);
       throw new AppError('Erreur lors de la mise à jour du profil', 500);
     }
@@ -254,13 +254,13 @@ export class ProfileService {
 
       logger.info(`Préférences mises à jour pour: ${userId}`);
       return updatedProfile;
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      if (error instanceof ZodError) {
-        throw new AppError(error.errors[0]?.message || 'Préférences invalides', 400);
-      }
+      } catch (error) {
+        if (error instanceof AppError) {
+          throw error;
+        }
+        if (error instanceof ZodError) {
+          throw new AppError(error.issues[0]?.message || 'Préférences invalides', 400);
+        }
       logger.error('Erreur lors de la mise à jour des préférences:', error);
       throw new AppError(
         'Erreur lors de la mise à jour des préférences',

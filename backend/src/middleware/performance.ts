@@ -82,27 +82,28 @@ export const cacheControlMiddleware = (req: Request, res: Response, next: NextFu
 /**
  * Middleware pour limiter la taille des payloads
  */
-export const payloadSizeLimit = (maxSizeInMB: number = 10) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const contentLength = parseInt(req.headers['content-length'] || '0', 10);
-    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+  export const payloadSizeLimit = (maxSizeInMB: number = 10) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+      const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
-    if (contentLength > maxSizeInBytes) {
-      logger.warn('Payload too large', {
-        contentLength,
-        maxSize: maxSizeInBytes,
+      if (contentLength > maxSizeInBytes) {
+        logger.warn('Payload too large', {
+          contentLength,
+          maxSize: maxSizeInBytes,
         path: req.path,
       });
 
-      return res.status(413).json({
-        message: `Payload trop volumineux. Maximum: ${maxSizeInMB}MB`,
-        statusCode: 413,
-      });
-    }
+        return res.status(413).json({
+          message: `Payload trop volumineux. Maximum: ${maxSizeInMB}MB`,
+          statusCode: 413,
+        });
+      }
 
-    next();
+      next();
+      return undefined;
+    };
   };
-};
 
 /**
  * Middleware pour détecter et logger les fuites mémoire potentielles
@@ -147,7 +148,7 @@ const stats: PerformanceStats = {
 /**
  * Middleware pour collecter des statistiques
  */
-export const statsCollector = (req: Request, res: Response, next: NextFunction) => {
+  export const statsCollector = (_req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
   res.on('finish', () => {

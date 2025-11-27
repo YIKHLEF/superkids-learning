@@ -182,16 +182,18 @@ export class SocketService {
         });
 
         // Envoyer le message au destinataire
-        this.io.to(data.recipientId).emit(SOCKET_EVENTS.NEW_MESSAGE, {
-          id: message.id,
-          senderId: message.senderId,
-          senderName: message.sender.name,
-          recipientId: message.recipientId,
-          subject: message.subject,
-          content: message.content,
-          attachments: message.attachments,
-          createdAt: message.createdAt.toISOString(),
-        });
+          this.io.to(data.recipientId).emit(SOCKET_EVENTS.NEW_MESSAGE, {
+            id: message.id,
+            senderId: message.senderId,
+            senderName: message.sender.name,
+            recipientId: message.recipientId,
+            subject: message.subject,
+            content: message.content,
+            attachments: Array.isArray(message.attachments)
+              ? (message.attachments as string[])
+              : [],
+            createdAt: message.createdAt.toISOString(),
+          });
 
         // Confirmer l'envoi à l'expéditeur
         socket.emit(SOCKET_EVENTS.MESSAGE_SENT, {

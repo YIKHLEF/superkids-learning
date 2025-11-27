@@ -116,7 +116,7 @@ export const prometheusMiddleware = (
 };
 
 export const metricsHandler = async (
-  req: Request,
+  _req: Request,
   res: Response
 ): Promise<void> => {
   res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');

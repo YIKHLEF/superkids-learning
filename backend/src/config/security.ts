@@ -30,12 +30,6 @@ export const configureSecurityHeaders = (app: Express) => {
         allow: false,
       },
 
-      // Expect-CT - Certificate Transparency
-      expectCt: {
-        maxAge: 86400, // 24 heures
-        enforce: true,
-      },
-
       // Frameguard - Protège contre le clickjacking
       frameguard: {
         action: 'deny',
@@ -214,7 +208,7 @@ export const noSqlInjectionProtection = (req: any, res: any, next: any) => {
  * Middleware de protection contre XSS
  * Nettoie les inputs des scripts malveillants
  */
-export const xssProtection = (req: any, res: any, next: any) => {
+export const xssProtection = (req: any, _res: any, next: any) => {
   const xssPatterns = [
     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
     /javascript:/gi,

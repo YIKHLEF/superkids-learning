@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: Request, _res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -25,7 +25,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
     const secret = process.env.JWT_SECRET || 'secret';
 
-    jwt.verify(token, secret, (err, decoded) => {
+  jwt.verify(token, secret, (err: jwt.VerifyErrors | null, decoded: any) => {
       if (err) {
         throw new AppError('Token invalide ou expiré', 403);
       }
@@ -39,7 +39,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 export const authorizeRoles = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new AppError('Non autorisé', 401);
     }

@@ -128,7 +128,7 @@ app.get('/api-docs.json', (req, res) => {
  *                   type: string
  *                   example: development
  */
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'OK',
     message: 'SuperKids Learning API is running',
@@ -167,7 +167,7 @@ app.get('/metrics', metricsHandler);
  *                     type: string
  *                   example: ["user_123", "user_456"]
  */
-app.get('/health/socket', (req, res) => {
+app.get('/health/socket', (_req, res) => {
   res.json({
     status: 'OK',
     onlineUsers: socketService.getOnlineUsers().length,

@@ -372,23 +372,24 @@ export class ActivityService {
     results: SessionResults
   ): Promise<void> {
     try {
+      const successRate = results.successRate ?? 0;
       const progress = await this.prisma.progress.findUnique({
         where: { childId },
       });
 
       if (!progress) {
         // Créer un nouveau progrès si n'existe pas
-        await this.prisma.progress.create({
-          data: {
-            childId,
-            totalActivitiesCompleted: 1,
-            tokensEarned: results.successRate >= 0.7 ? 10 : 5,
-            lastActivityDate: new Date(),
-          },
-        });
-      } else {
-        // Calculer les tokens gagnés
-        const tokensEarned = results.successRate >= 0.7 ? 10 : 5;
+          await this.prisma.progress.create({
+            data: {
+              childId,
+              totalActivitiesCompleted: 1,
+              tokensEarned: successRate >= 0.7 ? 10 : 5,
+              lastActivityDate: new Date(),
+            },
+          });
+        } else {
+          // Calculer les tokens gagnés
+          const tokensEarned = successRate >= 0.7 ? 10 : 5;
 
         // Calculer la série (streak)
         const today = new Date();

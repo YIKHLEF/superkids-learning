@@ -79,7 +79,7 @@ export const auditLog = (
  */
 export const logUnauthorizedAccess = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   const userId = (req as any).user?.id;
@@ -95,7 +95,7 @@ export const logUnauthorizedAccess = async (
  * Middleware pour logger les tentatives de connexion échouées
  */
 export const logFailedLoginAttempt = (email: string, reason: string) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     const ipAddress = getIpAddress(req);
     const userAgent = getUserAgent(req);
 
