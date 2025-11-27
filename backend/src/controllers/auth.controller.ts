@@ -6,6 +6,21 @@ import { logger } from '../utils/logger';
 import { auditService } from '../middleware/audit';
 
 // Simulé - à remplacer par Prisma Client
+const getIpAddress = (req: Request): string => req.ip || req.socket.remoteAddress || 'unknown';
+
+const getUserAgent = (req: Request): string => {
+  const userAgent = req.headers['user-agent'];
+  if (typeof userAgent === 'string') {
+    return userAgent;
+  }
+
+  if (Array.isArray(userAgent)) {
+    return userAgent.join(', ');
+  }
+
+  return 'unknown';
+};
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name, role } = req.body;
@@ -75,13 +90,11 @@ export const login = async (req: Request, res: Response) => {
     };
 
     if (!user) {
-      const userAgent = typeof req.headers['user-agent'] === 'string'
-        ? req.headers['user-agent']
-        : 'unknown';
+      const userAgent = getUserAgent(req);
 
       await auditService.logFailedLogin(
         userEmail,
-        req.ip,
+        getIpAddress(req),
         userAgent,
         'Utilisateur introuvable'
       );
@@ -92,13 +105,11 @@ export const login = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(userPassword, user.password);
 
     if (!isPasswordValid) {
-      const userAgent = typeof req.headers['user-agent'] === 'string'
-        ? req.headers['user-agent']
-        : 'unknown';
+      const userAgent = getUserAgent(req);
 
       await auditService.logFailedLogin(
         userEmail,
-        req.ip,
+        getIpAddress(req),
         userAgent,
         'Mot de passe invalide'
       );
@@ -114,11 +125,9 @@ export const login = async (req: Request, res: Response) => {
 
     logger.info(`User logged in: ${email}`);
 
-    const userAgent = typeof req.headers['user-agent'] === 'string'
-      ? req.headers['user-agent']
-      : 'unknown';
+    const userAgent = getUserAgent(req);
 
-    await auditService.logSuccessfulLogin(user.id, req.ip, userAgent);
+    await auditService.logSuccessfulLogin(user.id, getIpAddress(req), userAgent);
 
     res.json({
       status: 'success',

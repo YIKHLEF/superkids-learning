@@ -93,7 +93,7 @@ app.use(
 );
 
 // Endpoint pour obtenir le JSON OpenAPI
-app.get('/api-docs.json', (req, res) => {
+app.get('/api-docs.json', (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
