@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Container, Grid, Card, CardContent } from '@mui/material';
 import {
@@ -10,6 +10,11 @@ import {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const featuresRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollToFeatures = () => {
+    featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const features = [
     {
@@ -90,6 +95,7 @@ const HomePage: React.FC = () => {
               <Button
                 variant="outlined"
                 size="large"
+                onClick={handleScrollToFeatures}
                 sx={{
                   px: 4,
                   py: 2,
@@ -124,7 +130,7 @@ const HomePage: React.FC = () => {
       </Container>
 
       {/* Features Section */}
-      <Box sx={{ backgroundColor: 'background.paper', py: 8 }}>
+      <Box ref={featuresRef} sx={{ backgroundColor: 'background.paper', py: 8 }}>
         <Container maxWidth="lg">
           <Typography
             variant="h3"
