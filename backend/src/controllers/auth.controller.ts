@@ -9,7 +9,7 @@ import { auditService } from '../middleware/audit';
 const getIpAddress = (req: Request): string => req.ip || req.socket.remoteAddress || 'unknown';
 
 const getUserAgent = (req: Request): string => {
-  const userAgent = req.headers['user-agent'];
+  const userAgent = req.headers['user-agent'] as string | string[] | undefined;
   if (typeof userAgent === 'string') {
     return userAgent;
   }
