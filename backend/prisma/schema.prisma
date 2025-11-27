@@ -88,6 +88,7 @@ model ChildProfile {
 
   activitySessions      ActivitySession[]
   progress              Progress?
+  adaptiveRecommendations AdaptiveRecommendation[]
 
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
